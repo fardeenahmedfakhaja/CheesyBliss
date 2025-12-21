@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Order System</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="images/logo.png">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="images/logo.png" alt="Restaurant Logo" height="40" class="d-inline-block align-text-top me-2">
+                <span class="brand-text">Restaurant Order System</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#take-order" data-tab="take-order">
+                            <i class="fas fa-utensils me-1"></i> Take Order
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#ongoing-orders" data-tab="ongoing-orders">
+                            <i class="fas fa-clock me-1"></i> Ongoing Orders
+                            <span id="ongoing-badge" class="badge bg-warning ms-1">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#completed-orders" data-tab="completed-orders">
+                            <i class="fas fa-check-circle me-1"></i> Completed
+                            <span id="completed-badge" class="badge bg-success ms-1">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#menu-management" data-tab="menu-management">
+                            <i class="fas fa-edit me-1"></i> Menu Management
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid main-container">
+        <!-- Take Order Tab -->
+        <div id="take-order" class="tab-content active">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-cart-plus me-2"></i>Take New Order</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="customer-name" class="form-label">Customer Name (Optional)</label>
+                                    <input type="text" class="form-control" id="customer-name" placeholder="Enter customer name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="customer-number" class="form-label">Customer Number (Optional)</label>
+                                    <input type="text" class="form-control" id="customer-number" placeholder="Enter customer number">
+                                </div>
+                            </div>
+                            
+                            <h4 class="mb-3">Menu Items</h4>
+                            <div class="row" id="menu-items-container">
+                                <!-- Menu items will be loaded here dynamically -->
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h4>Selected Items</h4>
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="selected-items-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="selected-items-body">
+                                            <!-- Selected items will appear here -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active">
+                                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                                <td><strong id="grand-total">₹0</strong></td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                                <button class="btn btn-secondary" id="clear-order-btn">
+                                    <i class="fas fa-times me-1"></i> Clear Order
+                                </button>
+                                <button class="btn btn-success" id="place-order-btn">
+                                    <i class="fas fa-paper-plane me-1"></i> Place Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-receipt me-2"></i>Order Summary</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="order-summary">
+                                <p><strong>Order No:</strong> <span id="display-order-no">--</span></p>
+                                <p><strong>Customer:</strong> <span id="display-customer">--</span></p>
+                                <p><strong>Time:</strong> <span id="display-time">--</span></p>
+                                <hr>
+                                <div id="summary-items">
+                                    <!-- Summary items will appear here -->
+                                </div>
+                                <hr>
+                                <p class="text-end"><strong>Total: ₹<span id="summary-total">0</span></strong></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle me-2"></i>Instructions</h5>
+                        </div>
+                        <div class="card-body">
+                            <ol class="small">
+                                <li>Select items from the menu</li>
+                                <li>Adjust quantities as needed</li>
+                                <li>Add customer details (optional)</li>
+                                <li>Click "Place Order" to send to kitchen</li>
+                                <li>View ongoing orders in the next tab</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ongoing Orders Tab -->
+        <div id="ongoing-orders" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-clock me-2"></i>Ongoing Orders</h3>
+                    <p class="mb-0">Orders will auto-refresh every 10 seconds</p>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order No</th>
+                                    <th>Time</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ongoing-orders-body">
+                                <!-- Ongoing orders will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-ongoing-orders" class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                        <h4>No Ongoing Orders</h4>
+                        <p class="text-muted">All orders are completed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Orders Tab -->
+        <div id="completed-orders" class="tab-content">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-check-circle me-2"></i>Completed Orders</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order No</th>
+                                            <th>Time</th>
+                                            <th>Customer</th>
+                                            <th>Items</th>
+                                            <th>Total</th>
+                                            <th>Completed At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completed-orders-body">
+                                        <!-- Completed orders will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-completed-orders" class="text-center py-5">
+                                <i class="fas fa-check fa-3x mb-3 text-muted"></i>
+                                <h4>No Completed Orders</h4>
+                                <p class="text-muted">Complete some orders to see them here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-chart-pie me-2"></i>Sales Summary</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-box">
+                                <h5>Total Revenue</h5>
+                                <h2 class="text-success" id="total-revenue">₹0</h2>
+                                <p class="small text-muted">From <span id="total-orders-count">0</span> completed orders</p>
+                            </div>
+                            <hr>
+                            <div class="summary-box">
+                                <h5>Item-wise Sales</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Qty Sold</th>
+                                                <th>Revenue</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="item-summary-body">
+                                            <!-- Item summary will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="d-grid mt-3">
+                                <button class="btn btn-outline-danger" id="clear-completed-btn">
+                                    <i class="fas fa-trash me-1"></i> Clear All Completed Orders
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Management Tab -->
+        <div id="menu-management" class="tab-content">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-edit me-2"></i>Menu Management</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Item Name</th>
+                                            <th>Price (₹)</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="menu-management-body">
+                                        <!-- Menu items for management will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-plus-circle me-2"></i>Add/Edit Menu Item</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="menu-item-form">
+                                <div class="mb-3">
+                                    <label for="item-category" class="form-label">Category</label>
+                                    <select class="form-select" id="item-category" required>
+                                        <option value="">Select Category</option>
+                                        <option value="APPETIZERS">APPETIZERS</option>
+                                        <option value="WRAPS">WRAPS</option>
+                                        <option value="BURGERS">BURGERS</option>
+                                        <option value="SALADS">SALADS</option>
+                                        <option value="DESSERTS">DESSERTS</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="item-name" class="form-label">Item Name</label>
+                                    <input type="text" class="form-control" id="item-name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="item-price" class="form-label">Price (₹)</label>
+                                    <input type="number" class="form-control" id="item-price" min="1" required>
+                                </div>
+                                <input type="hidden" id="edit-item-id">
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success" id="save-menu-item-btn">
+                                        <i class="fas fa-save me-1"></i> Save Item
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit-btn">
+                                        <i class="fas fa-times me-1"></i> Cancel Edit
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div class="alert alert-info mt-4">
+                                <h5><i class="fas fa-lightbulb me-2"></i>Tips</h5>
+                                <ul class="mb-0 small">
+                                    <li>Click on any item to edit it</li>
+                                    <li>Changes will reflect immediately in the order system</li>
+                                    <li>Menu data is saved in your browser's local storage</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Order Details - #<span id="modal-order-no"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> <span id="modal-customer"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Order Time:</strong> <span id="modal-order-time"></span></p>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-items-body">
+                                <!-- Order items will be loaded here -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td><strong>₹<span id="modal-total"></span></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="complete-order-btn" data-order-id="">Mark as Complete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

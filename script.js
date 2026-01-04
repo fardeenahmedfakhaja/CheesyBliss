@@ -1,4 +1,4 @@
-// Restaurant Order Management System
+// Restaurant Order Management System (Simplified)
 class RestaurantOrderSystem {
     constructor() {
         // Initialize data
@@ -7,7 +7,6 @@ class RestaurantOrderSystem {
         this.orders = this.loadData('orders') || [];
         this.completedOrders = this.loadData('completedOrders') || [];
         this.orderTemplates = this.loadData('orderTemplates') || [];
-        this.settings = this.loadData('settings') || this.getDefaultSettings();
         this.nextOrderId = this.loadData('nextOrderId') || 1001;
         
         // Current order state
@@ -20,44 +19,41 @@ class RestaurantOrderSystem {
             notes: ''
         };
         
-        // Charts
-        this.salesChart = null;
-        
         // Initialize
         this.init();
     }
     
-    // Default menu items
+    // Default menu items (without stock)
     getDefaultMenu() {
         return [
             // APPETIZERS
-            { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140, cost: 70, stock: 50, status: 'available' },
-            { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125, cost: 60, stock: 50, status: 'available' },
-            { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99, cost: 40, stock: 100, status: 'available' },
-            { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109, cost: 50, stock: 50, status: 'available' },
-            { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75, cost: 35, stock: 80, status: 'available' },
-            { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99, cost: 50, stock: 80, status: 'available' },
+            { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140 },
+            { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125 },
+            { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99 },
+            { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109 },
+            { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75 },
+            { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99 },
             
             // WRAPS
-            { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130, cost: 70, stock: 40, status: 'available' },
-            { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120, cost: 60, stock: 40, status: 'available' },
-            { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150, cost: 80, stock: 40, status: 'available' },
-            { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120, cost: 60, stock: 40, status: 'available' },
+            { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130 },
+            { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120 },
+            { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150 },
+            { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120 },
             
             // BURGERS
-            { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115, cost: 50, stock: 60, status: 'available' },
-            { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135, cost: 70, stock: 60, status: 'available' },
+            { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115 },
+            { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135 },
             
             // SALADS
-            { id: 13, category: 'SALADS', name: 'Veg salad', price: 99, cost: 40, stock: 30, status: 'available' },
-            { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130, cost: 60, stock: 30, status: 'available' },
+            { id: 13, category: 'SALADS', name: 'Veg salad', price: 99 },
+            { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130 },
             
             // DESSERTS
-            { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90, cost: 30, stock: 50, status: 'available' },
-            { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90, cost: 30, stock: 50, status: 'available' },
-            { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130, cost: 50, stock: 30, status: 'available' },
-            { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110, cost: 40, stock: 30, status: 'available' },
-            { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120, cost: 45, stock: 30, status: 'available' }
+            { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90 },
+            { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90 },
+            { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130 },
+            { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110 },
+            { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120 }
         ];
     }
     
@@ -72,15 +68,6 @@ class RestaurantOrderSystem {
         ];
     }
     
-    // Default settings
-    getDefaultSettings() {
-        return {
-            taxRate: 5,
-            currency: '₹',
-            restaurantName: 'Restaurant POS'
-        };
-    }
-    
     // Local storage methods
     saveData(key, data) {
         try {
@@ -88,6 +75,7 @@ class RestaurantOrderSystem {
             return true;
         } catch (e) {
             console.error('Error saving data:', e);
+            this.showNotification('Error saving data!', 'error');
             return false;
         }
     }
@@ -114,9 +102,6 @@ class RestaurantOrderSystem {
         this.updateBadges();
         this.updateNextOrderNumber();
         
-        // Auto-save every 30 seconds
-        setInterval(() => this.autoSave(), 30000);
-        
         // Check if mobile
         this.checkMobile();
     }
@@ -129,12 +114,6 @@ class RestaurantOrderSystem {
         }
     }
     
-    // Auto-save data
-    autoSave() {
-        this.saveAllData();
-        console.log('Auto-save completed');
-    }
-    
     // Save all data
     saveAllData() {
         this.saveData('menu', this.menu);
@@ -142,7 +121,6 @@ class RestaurantOrderSystem {
         this.saveData('orders', this.orders);
         this.saveData('completedOrders', this.completedOrders);
         this.saveData('orderTemplates', this.orderTemplates);
-        this.saveData('settings', this.settings);
         this.saveData('nextOrderId', this.nextOrderId);
     }
     
@@ -317,24 +295,21 @@ class RestaurantOrderSystem {
                 const currentItem = this.currentOrder.items.find(i => i.id === item.id);
                 const quantity = currentItem ? currentItem.quantity : 0;
                 const isSelected = quantity > 0;
-                const isOutOfStock = item.stock <= 0;
                 
                 itemDiv.innerHTML = `
-                    <div class="menu-item-card ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'opacity-50' : ''}" 
+                    <div class="menu-item-card ${isSelected ? 'selected' : ''}" 
                          data-item-id="${item.id}">
-                        ${isOutOfStock ? '<span class="badge bg-danger position-absolute top-0 end-0 m-1">Out of Stock</span>' : ''}
                         <div>
                             <div class="menu-item-name">${item.name}</div>
                             <div class="menu-item-price">₹${item.price}</div>
-                            ${item.stock !== undefined ? `<small class="text-muted">Stock: ${item.stock}</small>` : ''}
                         </div>
                         <div class="menu-item-quantity">
-                            <button class="quantity-btn minus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
+                            <button class="quantity-btn minus-btn" data-item-id="${item.id}">
                                 <i class="fas fa-minus"></i>
                             </button>
                             <input type="number" class="quantity-input" id="qty-${item.id}" 
-                                   value="${quantity}" min="0" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
-                            <button class="quantity-btn plus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
+                                   value="${quantity}" min="0" data-item-id="${item.id}">
+                            <button class="quantity-btn plus-btn" data-item-id="${item.id}">
                                 <i class="fas fa-plus"></i>
                             </button>
                         </div>
@@ -348,12 +323,10 @@ class RestaurantOrderSystem {
                 const plusBtn = itemDiv.querySelector('.plus-btn');
                 const qtyInput = itemDiv.querySelector('.quantity-input');
                 
-                if (!isOutOfStock) {
-                    minusBtn.addEventListener('click', () => this.adjustQuantity(item.id, -1));
-                    plusBtn.addEventListener('click', () => this.adjustQuantity(item.id, 1));
-                    qtyInput.addEventListener('change', (e) => this.setQuantity(item.id, parseInt(e.target.value) || 0));
-                    qtyInput.addEventListener('input', (e) => this.setQuantity(item.id, parseInt(e.target.value) || 0));
-                }
+                minusBtn.addEventListener('click', () => this.adjustQuantity(item.id, -1));
+                plusBtn.addEventListener('click', () => this.adjustQuantity(item.id, 1));
+                qtyInput.addEventListener('change', (e) => this.setQuantity(item.id, parseInt(e.target.value) || 0));
+                qtyInput.addEventListener('input', (e) => this.setQuantity(item.id, parseInt(e.target.value) || 0));
             });
             
             container.appendChild(categoryDiv);
@@ -369,13 +342,6 @@ class RestaurantOrderSystem {
         let newValue = currentValue + change;
         
         if (newValue < 0) newValue = 0;
-        
-        // Check stock
-        const menuItem = this.menu.find(item => item.id === itemId);
-        if (menuItem && menuItem.stock !== undefined && newValue > menuItem.stock) {
-            newValue = menuItem.stock;
-            this.showNotification(`Only ${menuItem.stock} items available in stock!`, 'warning');
-        }
         
         input.value = newValue;
         this.setQuantity(itemId, newValue);
@@ -440,18 +406,16 @@ class RestaurantOrderSystem {
                 </tr>
             `;
             
-            document.getElementById('subtotal').textContent = '₹0';
-            document.getElementById('tax-amount').textContent = '₹0';
             document.getElementById('grand-total').textContent = '₹0';
             
             return;
         }
         
         let html = '';
-        let subtotal = 0;
+        let total = 0;
         
         this.currentOrder.items.forEach((item, index) => {
-            subtotal += item.total;
+            total += item.total;
             html += `
                 <tr>
                     <td>${item.name}</td>
@@ -480,12 +444,7 @@ class RestaurantOrderSystem {
         
         tbody.innerHTML = html;
         
-        const tax = subtotal * 0.05;
-        const grandTotal = subtotal + tax;
-        
-        document.getElementById('subtotal').textContent = `₹${subtotal}`;
-        document.getElementById('tax-amount').textContent = `₹${tax.toFixed(2)}`;
-        document.getElementById('grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
+        document.getElementById('grand-total').textContent = `₹${total}`;
     }
     
     // Update order summary
@@ -514,10 +473,10 @@ class RestaurantOrderSystem {
         // Update items in summary
         const container = document.getElementById('summary-items');
         let html = '';
-        let subtotal = 0;
+        let total = 0;
         
         this.currentOrder.items.forEach(item => {
-            subtotal += item.total;
+            total += item.total;
             html += `
                 <div class="summary-item">
                     <span>${item.name} x${item.quantity}</span>
@@ -528,13 +487,8 @@ class RestaurantOrderSystem {
         
         container.innerHTML = html || '<div class="text-muted small">No items selected</div>';
         
-        // Update totals
-        const tax = subtotal * 0.05;
-        const grandTotal = subtotal + tax;
-        
-        document.getElementById('summary-subtotal').textContent = `₹${subtotal}`;
-        document.getElementById('summary-tax').textContent = `₹${tax.toFixed(2)}`;
-        document.getElementById('summary-total').textContent = `₹${grandTotal.toFixed(2)}`;
+        // Update total
+        document.getElementById('summary-total').textContent = `₹${total}`;
     }
     
     // Update stats
@@ -578,19 +532,8 @@ class RestaurantOrderSystem {
             return;
         }
         
-        // Check stock availability
-        for (const item of this.currentOrder.items) {
-            const menuItem = this.menu.find(m => m.id === item.id);
-            if (menuItem && menuItem.stock < item.quantity) {
-                this.showNotification(`Insufficient stock for ${item.name}`, 'error');
-                return;
-            }
-        }
-        
-        // Calculate totals
-        const subtotal = this.currentOrder.items.reduce((sum, item) => sum + item.total, 0);
-        const tax = subtotal * 0.05;
-        const grandTotal = subtotal + tax;
+        // Calculate total
+        const total = this.currentOrder.items.reduce((sum, item) => sum + item.total, 0);
         
         // Create order
         const order = {
@@ -600,16 +543,11 @@ class RestaurantOrderSystem {
             orderType: this.currentOrder.orderType,
             paymentMethod: this.currentOrder.paymentMethod,
             items: [...this.currentOrder.items],
-            subtotal: subtotal,
-            tax: tax,
-            total: grandTotal,
+            total: total,
             orderTime: new Date().toISOString(),
             status: 'preparing',
             placedBy: 'System'
         };
-        
-        // Deduct stock
-        this.deductStock(order.items);
         
         // Add to orders
         this.orders.unshift(order);
@@ -630,22 +568,6 @@ class RestaurantOrderSystem {
         
         // Switch to ongoing orders tab
         this.switchTab('ongoing-orders');
-    }
-    
-    // Deduct stock from inventory
-    deductStock(items) {
-        items.forEach(orderItem => {
-            const menuItem = this.menu.find(item => item.id === orderItem.id);
-            if (menuItem && menuItem.stock !== undefined) {
-                menuItem.stock -= orderItem.quantity;
-                if (menuItem.stock < 0) menuItem.stock = 0;
-                
-                // Update status if out of stock
-                if (menuItem.stock === 0) {
-                    menuItem.status = 'unavailable';
-                }
-            }
-        });
     }
     
     // Clear current order
@@ -763,7 +685,7 @@ class RestaurantOrderSystem {
                     <td>${orderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td>${order.customerName || 'Walk-in'}</td>
                     <td>${itemsText}${moreItems}</td>
-                    <td>₹${order.total.toFixed(2)}</td>
+                    <td>₹${order.total}</td>
                     <td>
                         <span class="status-badge status-${order.status}">
                             ${order.status}
@@ -839,7 +761,7 @@ class RestaurantOrderSystem {
         });
         
         document.getElementById('modal-items-body').innerHTML = itemsHtml;
-        document.getElementById('modal-total').textContent = order.total.toFixed(2);
+        document.getElementById('modal-total').textContent = order.total;
         
         // Set order id on complete button
         const completeBtn = document.getElementById('complete-order-btn');
@@ -899,10 +821,6 @@ class RestaurantOrderSystem {
         const orderIndex = this.orders.findIndex(o => o.id == orderId);
         if (orderIndex === -1) return;
         
-        // Restore stock if needed
-        const order = this.orders[orderIndex];
-        this.restoreStock(order.items);
-        
         // Remove order
         this.orders.splice(orderIndex, 1);
         
@@ -914,19 +832,6 @@ class RestaurantOrderSystem {
         this.updateBadges();
         
         this.showNotification(`Order #${orderId} deleted`, 'success');
-    }
-    
-    // Restore stock
-    restoreStock(items) {
-        items.forEach(orderItem => {
-            const menuItem = this.menu.find(item => item.id === orderItem.id);
-            if (menuItem && menuItem.stock !== undefined) {
-                menuItem.stock += orderItem.quantity;
-                if (menuItem.status === 'unavailable' && menuItem.stock > 0) {
-                    menuItem.status = 'available';
-                }
-            }
-        });
     }
     
     // Print all orders
@@ -993,7 +898,7 @@ class RestaurantOrderSystem {
                     <td>${orderTime.toLocaleDateString()}</td>
                     <td>${order.customerName || 'Walk-in'}</td>
                     <td>${itemsCount} items</td>
-                    <td>₹${order.total.toFixed(2)}</td>
+                    <td>₹${order.total}</td>
                     <td>${completedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                 </tr>
             `;
@@ -1011,7 +916,7 @@ class RestaurantOrderSystem {
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
         const totalOrders = orders.length;
         
-        document.getElementById('total-revenue').textContent = `₹${totalRevenue.toFixed(2)}`;
+        document.getElementById('total-revenue').textContent = `₹${totalRevenue}`;
         document.getElementById('total-orders').textContent = totalOrders;
         
         // Calculate item-wise sales
@@ -1032,7 +937,7 @@ class RestaurantOrderSystem {
         // Update top items table
         const topItems = Object.entries(itemSales)
             .sort((a, b) => b[1].revenue - a[1].revenue)
-            .slice(0, 5);
+            .slice(0, 10);
         
         let topItemsHtml = '';
         topItems.forEach(([itemName, data]) => {
@@ -1040,90 +945,13 @@ class RestaurantOrderSystem {
                 <tr>
                     <td>${itemName}</td>
                     <td>${data.quantity}</td>
-                    <td>₹${data.revenue.toFixed(2)}</td>
+                    <td>₹${data.revenue}</td>
                 </tr>
             `;
         });
         
         document.getElementById('top-items-body').innerHTML = topItemsHtml || 
             '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
-        
-        // Update sales chart
-        this.updateSalesChart(topItems);
-    }
-    
-    // Update sales chart
-    updateSalesChart(topItems) {
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        
-        // Destroy existing chart
-        if (this.salesChart) {
-            this.salesChart.destroy();
-        }
-        
-        // Prepare data
-        const labels = topItems.map(item => item[0]);
-        const quantities = topItems.map(item => item[1].quantity);
-        const revenues = topItems.map(item => item[1].revenue);
-        
-        // Create chart
-        this.salesChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Quantity Sold',
-                        data: quantities,
-                        backgroundColor: 'rgba(255, 107, 53, 0.7)',
-                        borderColor: 'rgba(255, 107, 53, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y'
-                    },
-                    {
-                        label: 'Revenue (₹)',
-                        data: revenues,
-                        backgroundColor: 'rgba(41, 128, 185, 0.7)',
-                        borderColor: 'rgba(41, 128, 185, 1)',
-                        borderWidth: 1,
-                        yAxisID: 'y1',
-                        type: 'line'
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Quantity'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Revenue (₹)'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                }
-            }
-        });
     }
     
     // Download PDF report
@@ -1156,7 +984,7 @@ class RestaurantOrderSystem {
         
         doc.setFontSize(11);
         doc.text(`Total Orders: ${totalOrders}`, 20, 55);
-        doc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`, 20, 62);
+        doc.text(`Total Revenue: ₹${totalRevenue}`, 20, 62);
         
         // Calculate item-wise sales
         const itemSales = {};
@@ -1178,7 +1006,7 @@ class RestaurantOrderSystem {
             index + 1,
             itemName,
             data.quantity,
-            `₹${data.revenue.toFixed(2)}`
+            `₹${data.revenue}`
         ]);
         
         // Add item-wise sales table
@@ -1188,6 +1016,28 @@ class RestaurantOrderSystem {
             startY: 70,
             theme: 'grid',
             headStyles: { fillColor: [255, 107, 53] }
+        });
+        
+        // Add recent orders table
+        const recentOrders = this.completedOrders.slice(0, 10);
+        const recentOrdersData = recentOrders.map((order, index) => [
+            order.id,
+            new Date(order.orderTime).toLocaleDateString(),
+            order.customerName || 'Walk-in',
+            order.items.reduce((sum, item) => sum + item.quantity, 0),
+            `₹${order.total}`
+        ]);
+        
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('Recent Orders', 20, 20);
+        
+        doc.autoTable({
+            head: [['Order #', 'Date', 'Customer', 'Items', 'Total']],
+            body: recentOrdersData,
+            startY: 30,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185] }
         });
         
         // Save PDF
@@ -1242,7 +1092,7 @@ class RestaurantOrderSystem {
             // Category header
             html += `
                 <tr class="table-secondary">
-                    <td colspan="5" class="fw-bold">
+                    <td colspan="4" class="fw-bold">
                         ${category}
                         <button class="btn btn-sm btn-outline-danger float-end delete-category-btn" 
                                 data-category="${category}">
@@ -1260,7 +1110,6 @@ class RestaurantOrderSystem {
                         <td></td>
                         <td>${item.name}</td>
                         <td>₹${item.price}</td>
-                        <td>${item.stock}</td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary edit-item-btn" 
                                     data-item-id="${item.id}">
@@ -1310,9 +1159,6 @@ class RestaurantOrderSystem {
         document.getElementById('item-category').value = item.category;
         document.getElementById('item-name').value = item.name;
         document.getElementById('item-price').value = item.price;
-        document.getElementById('item-cost').value = item.cost || '';
-        document.getElementById('item-stock').value = item.stock || 0;
-        document.getElementById('item-status').value = item.status || 'available';
         document.getElementById('edit-item-id').value = item.id;
         
         // Scroll to form
@@ -1324,9 +1170,6 @@ class RestaurantOrderSystem {
         const category = document.getElementById('item-category').value;
         const name = document.getElementById('item-name').value.trim();
         const price = parseInt(document.getElementById('item-price').value);
-        const cost = parseInt(document.getElementById('item-cost').value) || 0;
-        const stock = parseInt(document.getElementById('item-stock').value) || 0;
-        const status = document.getElementById('item-status').value;
         const editItemId = document.getElementById('edit-item-id').value;
         
         if (!category || !name || !price || price <= 0) {
@@ -1343,9 +1186,6 @@ class RestaurantOrderSystem {
                 this.menu[itemIndex].category = category;
                 this.menu[itemIndex].name = name;
                 this.menu[itemIndex].price = price;
-                this.menu[itemIndex].cost = cost;
-                this.menu[itemIndex].stock = stock;
-                this.menu[itemIndex].status = status;
             }
         } else {
             // Add new item
@@ -1354,10 +1194,7 @@ class RestaurantOrderSystem {
                 id: newId,
                 category: category,
                 name: name,
-                price: price,
-                cost: cost,
-                stock: stock,
-                status: status
+                price: price
             });
         }
         
@@ -1378,7 +1215,6 @@ class RestaurantOrderSystem {
     cancelEditMenuItem() {
         document.getElementById('menu-item-form').reset();
         document.getElementById('edit-item-id').value = '';
-        document.getElementById('item-status').value = 'available';
     }
     
     // Delete menu item

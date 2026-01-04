@@ -3,9 +3,11 @@ class RestaurantOrderSystem {
     constructor() {
         // Initialize data structures
         this.menu = this.loadMenu();
+        this.categories = this.loadData('categories') || this.getDefaultCategories();
         this.orders = this.loadData('orders') || [];
         this.completedOrders = this.loadData('completedOrders') || [];
         this.nextOrderId = this.loadData('nextOrderId') || 1001;
+        this.salesChart = null;
         
         // Initialize UI
         this.initEventListeners();
@@ -14,6 +16,7 @@ class RestaurantOrderSystem {
         this.renderCompletedOrders();
         this.renderMenuManagement();
         this.updateBadges();
+        this.updateCategoryDropdown();
         
         // Auto-refresh ongoing orders every 10 seconds
         setInterval(() => this.renderOngoingOrders(), 10000);
@@ -53,6 +56,17 @@ class RestaurantOrderSystem {
         { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110 },
         { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120 }
     ];
+    
+    // Default categories
+    getDefaultCategories() {
+        return [
+            { id: 1, name: 'APPETIZERS', description: 'Appetizers and Starters' },
+            { id: 2, name: 'WRAPS', description: 'Fresh Wraps' },
+            { id: 3, name: 'BURGERS', description: 'Burgers' },
+            { id: 4, name: 'SALADS', description: 'Healthy Salads' },
+            { id: 5, name: 'DESSERTS', description: 'Sweet Desserts' }
+        ];
+    }
     
     // Current order
     currentOrder = {
@@ -116,6 +130,9 @@ class RestaurantOrderSystem {
         // Clear completed orders button
         document.getElementById('clear-completed-btn').addEventListener('click', () => this.clearCompletedOrders());
         
+        // Download PDF button
+        document.getElementById('download-pdf-btn').addEventListener('click', () => this.downloadPDFReport());
+        
         // Menu item form
         document.getElementById('menu-item-form').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -124,6 +141,24 @@ class RestaurantOrderSystem {
         
         // Cancel edit button
         document.getElementById('cancel-edit-btn').addEventListener('click', () => this.cancelEditMenuItem());
+        
+        // Add category button
+        document.getElementById('add-category-btn').addEventListener('click', () => this.showAddCategoryModal());
+        
+        // New category button
+        document.getElementById('new-category-btn').addEventListener('click', () => this.showNewCategoryInput());
+        
+        // Save new category button
+        document.getElementById('save-new-category-btn').addEventListener('click', () => this.saveNewCategory());
+        
+        // Cancel new category button
+        document.getElementById('cancel-new-category-btn').addEventListener('click', () => this.hideNewCategoryInput());
+        
+        // Category form
+        document.getElementById('category-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addNewCategory();
+        });
         
         // Update customer info
         document.getElementById('customer-name').addEventListener('input', (e) => {
@@ -178,8 +213,12 @@ class RestaurantOrderSystem {
             categories[item.category].push(item);
         });
         
+        // Sort categories by order
+        const sortedCategories = Object.keys(categories).sort();
+        
         // Create category sections
-        for (const [category, items] of Object.entries(categories)) {
+        sortedCategories.forEach(category => {
+            const items = categories[category];
             const categoryDiv = document.createElement('div');
             categoryDiv.className = 'menu-category col-12';
             categoryDiv.innerHTML = `<h5>${category}</h5><div class="row" id="category-${category}"></div>`;
@@ -217,7 +256,7 @@ class RestaurantOrderSystem {
             });
             
             container.appendChild(categoryDiv);
-        }
+        });
     }
     
     // Adjust item quantity
@@ -460,8 +499,11 @@ class RestaurantOrderSystem {
                     <button class="btn btn-sm btn-outline-primary me-1 view-order-btn" data-order-id="${order.id}">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-success complete-order-btn" data-order-id="${order.id}">
-                        <i class="fas fa-check"></i> Complete
+                    <button class="btn btn-sm btn-success me-1 complete-order-btn" data-order-id="${order.id}">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-order-btn" data-order-id="${order.id}">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </td>
             `;
@@ -481,6 +523,13 @@ class RestaurantOrderSystem {
             btn.addEventListener('click', (e) => {
                 const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
                 this.completeOrderDirectly(orderId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-order-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
+                this.deleteOrder(orderId);
             });
         });
         
@@ -565,6 +614,29 @@ class RestaurantOrderSystem {
         alert(`Order #${orderId} marked as completed!`);
     }
     
+    // Delete order (cancelled order)
+    deleteOrder(orderId) {
+        if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+            return;
+        }
+        
+        const orderIndex = this.orders.findIndex(o => o.id === orderId);
+        if (orderIndex === -1) return;
+        
+        // Remove from orders array
+        this.orders.splice(orderIndex, 1);
+        
+        // Save data
+        this.saveData('orders', this.orders);
+        
+        // Update UI
+        this.renderOngoingOrders();
+        this.updateBadges();
+        
+        // Show confirmation
+        alert(`Order #${orderId} has been deleted!`);
+    }
+    
     // Render completed orders
     renderCompletedOrders() {
         const tbody = document.getElementById('completed-orders-body');
@@ -622,7 +694,8 @@ class RestaurantOrderSystem {
                 if (!itemSales[item.name]) {
                     itemSales[item.name] = {
                         quantity: 0,
-                        revenue: 0
+                        revenue: 0,
+                        category: this.getMenuItemCategory(item.name)
                     };
                 }
                 itemSales[item.name].quantity += item.quantity;
@@ -656,6 +729,198 @@ class RestaurantOrderSystem {
                 </tr>
             `;
         }
+        
+        // Update sales chart
+        this.updateSalesChart(itemSales);
+    }
+    
+    // Get menu item category
+    getMenuItemCategory(itemName) {
+        const item = this.menu.find(i => i.name === itemName);
+        return item ? item.category : 'Unknown';
+    }
+    
+    // Update sales chart
+    updateSalesChart(itemSales) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = Object.keys(itemSales);
+        const quantities = Object.values(itemSales).map(data => data.quantity);
+        const revenues = Object.values(itemSales).map(data => data.revenue);
+        
+        // Destroy existing chart if it exists
+        if (this.salesChart) {
+            this.salesChart.destroy();
+        }
+        
+        // Create new chart
+        this.salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Quantity Sold',
+                        data: quantities,
+                        backgroundColor: 'rgba(255, 107, 53, 0.6)',
+                        borderColor: 'rgba(255, 107, 53, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Revenue (₹)',
+                        data: revenues,
+                        backgroundColor: 'rgba(41, 128, 185, 0.6)',
+                        borderColor: 'rgba(41, 128, 185, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1',
+                        type: 'line'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Quantity'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Revenue (₹)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Download PDF report
+    downloadPDFReport() {
+        if (this.completedOrders.length === 0) {
+            alert('No completed orders to generate report!');
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        // Add title
+        doc.setFontSize(20);
+        doc.setTextColor(40, 40, 40);
+        doc.text('Restaurant Sales Report', 105, 20, { align: 'center' });
+        
+        // Add date
+        doc.setFontSize(12);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
+        
+        // Add summary
+        const totalRevenue = this.completedOrders.reduce((sum, order) => sum + order.total, 0);
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Summary', 20, 45);
+        
+        doc.setFontSize(11);
+        doc.text(`Total Orders: ${this.completedOrders.length}`, 20, 55);
+        doc.text(`Total Revenue: ₹${totalRevenue}`, 20, 62);
+        
+        // Calculate item-wise sales for table
+        const itemSales = {};
+        this.completedOrders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemSales[item.name]) {
+                    itemSales[item.name] = {
+                        quantity: 0,
+                        revenue: 0
+                    };
+                }
+                itemSales[item.name].quantity += item.quantity;
+                itemSales[item.name].revenue += item.total;
+            });
+        });
+        
+        // Prepare table data
+        const tableData = Object.entries(itemSales).map(([itemName, data], index) => [
+            index + 1,
+            itemName,
+            data.quantity,
+            `₹${data.revenue}`
+        ]);
+        
+        // Add item-wise sales table
+        doc.autoTable({
+            head: [['#', 'Item Name', 'Quantity', 'Revenue']],
+            body: tableData,
+            startY: 70,
+            theme: 'grid',
+            headStyles: { fillColor: [255, 107, 53] },
+            margin: { top: 70 }
+        });
+        
+        // Add recent orders table
+        const recentOrders = this.completedOrders.slice(0, 10); // Last 10 orders
+        const recentOrdersData = recentOrders.map((order, index) => [
+            order.id,
+            new Date(order.orderTime).toLocaleDateString(),
+            order.customerName || 'Walk-in',
+            order.items.length,
+            `₹${order.total}`
+        ]);
+        
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('Recent Completed Orders', 20, 20);
+        
+        doc.autoTable({
+            head: [['Order #', 'Date', 'Customer', 'Items', 'Total']],
+            body: recentOrdersData,
+            startY: 30,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185] }
+        });
+        
+        // Add footer
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text(`Page ${i} of ${pageCount}`, 195, 285, { align: 'right' });
+            doc.text('Restaurant Order System - Generated Report', 105, 285, { align: 'center' });
+        }
+        
+        // Save the PDF
+        doc.save(`sales-report-${new Date().toISOString().split('T')[0]}.pdf`);
     }
     
     // Clear all completed orders
@@ -685,17 +950,43 @@ class RestaurantOrderSystem {
             categories[item.category].push(item);
         });
         
+        // Get all categories from categories list
+        const allCategories = this.categories.map(cat => cat.name);
+        
+        // Add categories that might be in menu but not in categories list
+        Object.keys(categories).forEach(catName => {
+            if (!allCategories.includes(catName)) {
+                this.categories.push({ id: this.categories.length + 1, name: catName, description: '' });
+            }
+        });
+        
+        // Sort categories
+        const sortedCategories = Object.keys(categories).sort();
+        
         // Render each category
-        for (const [category, items] of Object.entries(categories)) {
+        sortedCategories.forEach(category => {
             // Add category header row
             const headerRow = document.createElement('tr');
             headerRow.className = 'table-active';
             headerRow.innerHTML = `
-                <td colspan="4" class="fw-bold">${category}</td>
+                <td colspan="4" class="fw-bold">
+                    ${category}
+                    <button class="btn btn-sm btn-outline-danger float-end delete-category-btn" data-category="${category}">
+                        <i class="fas fa-trash"></i> Delete Category
+                    </button>
+                </td>
             `;
             tbody.appendChild(headerRow);
             
+            // Add event listener for delete category button
+            headerRow.querySelector('.delete-category-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const categoryName = e.currentTarget.getAttribute('data-category');
+                this.deleteCategory(categoryName);
+            });
+            
             // Add items in this category
+            const items = categories[category];
             items.forEach(item => {
                 const row = document.createElement('tr');
                 row.className = 'menu-management-row';
@@ -718,7 +1009,7 @@ class RestaurantOrderSystem {
                 row.querySelector('.edit-menu-item').addEventListener('click', () => this.editMenuItem(item.id));
                 row.querySelector('.delete-menu-item').addEventListener('click', () => this.deleteMenuItem(item.id));
             });
-        }
+        });
         
         // Add "Add New Item" row
         const addRow = document.createElement('tr');
@@ -735,6 +1026,148 @@ class RestaurantOrderSystem {
         document.getElementById('add-new-item-btn').addEventListener('click', () => {
             this.cancelEditMenuItem(); // Reset form
         });
+        
+        // Update category dropdown
+        this.updateCategoryDropdown();
+    }
+    
+    // Update category dropdown
+    updateCategoryDropdown() {
+        const categorySelect = document.getElementById('item-category');
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        
+        // Sort categories alphabetically
+        const sortedCategories = [...this.categories].sort((a, b) => a.name.localeCompare(b.name));
+        
+        sortedCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    }
+    
+    // Show add category modal
+    showAddCategoryModal() {
+        const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+        modal.show();
+    }
+    
+    // Add new category
+    addNewCategory() {
+        const name = document.getElementById('category-name').value.trim();
+        const description = document.getElementById('category-description').value.trim();
+        
+        if (!name) {
+            alert('Please enter a category name');
+            return;
+        }
+        
+        // Check if category already exists
+        if (this.categories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+            alert('Category already exists!');
+            return;
+        }
+        
+        // Add new category
+        const newId = Math.max(...this.categories.map(c => c.id)) + 1;
+        this.categories.push({
+            id: newId,
+            name: name.toUpperCase(),
+            description: description
+        });
+        
+        // Save categories
+        this.saveData('categories', this.categories);
+        
+        // Update UI
+        this.updateCategoryDropdown();
+        this.renderMenuManagement();
+        
+        // Hide modal and reset form
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+        modal.hide();
+        document.getElementById('category-form').reset();
+        
+        alert(`Category "${name}" added successfully!`);
+    }
+    
+    // Show new category input
+    showNewCategoryInput() {
+        document.getElementById('new-category-input').classList.remove('d-none');
+        document.getElementById('new-category-name').focus();
+    }
+    
+    // Hide new category input
+    hideNewCategoryInput() {
+        document.getElementById('new-category-input').classList.add('d-none');
+        document.getElementById('new-category-name').value = '';
+    }
+    
+    // Save new category from inline input
+    saveNewCategory() {
+        const name = document.getElementById('new-category-name').value.trim();
+        
+        if (!name) {
+            alert('Please enter a category name');
+            return;
+        }
+        
+        // Check if category already exists
+        if (this.categories.some(cat => cat.name.toLowerCase() === name.toLowerCase())) {
+            alert('Category already exists!');
+            return;
+        }
+        
+        // Add new category
+        const newId = Math.max(...this.categories.map(c => c.id)) + 1;
+        this.categories.push({
+            id: newId,
+            name: name.toUpperCase(),
+            description: ''
+        });
+        
+        // Save categories
+        this.saveData('categories', this.categories);
+        
+        // Update UI
+        this.updateCategoryDropdown();
+        this.renderMenuManagement();
+        
+        // Hide input and reset
+        this.hideNewCategoryInput();
+        
+        // Set the new category as selected
+        document.getElementById('item-category').value = name.toUpperCase();
+        
+        alert(`Category "${name}" added successfully!`);
+    }
+    
+    // Delete category
+    deleteCategory(categoryName) {
+        // Check if category has items
+        const itemsInCategory = this.menu.filter(item => item.category === categoryName);
+        
+        if (itemsInCategory.length > 0) {
+            if (!confirm(`Category "${categoryName}" has ${itemsInCategory.length} item(s). Deleting it will also delete all items in this category. Are you sure?`)) {
+                return;
+            }
+            
+            // Remove all items in this category
+            this.menu = this.menu.filter(item => item.category !== categoryName);
+            this.saveData('menu', this.menu);
+        }
+        
+        // Remove category from categories list
+        this.categories = this.categories.filter(cat => cat.name !== categoryName);
+        this.saveData('categories', this.categories);
+        
+        // Update UI
+        this.renderMenu();
+        this.renderMenuManagement();
+        this.clearCurrentOrder();
+        
+        alert(`Category "${categoryName}" deleted successfully!`);
     }
     
     // Edit menu item
@@ -765,6 +1198,17 @@ class RestaurantOrderSystem {
         if (!category || !name || !price || price <= 0) {
             alert('Please fill in all fields with valid values');
             return;
+        }
+        
+        // Check if category exists in categories list, if not add it
+        if (!this.categories.some(cat => cat.name === category)) {
+            const newId = Math.max(...this.categories.map(c => c.id)) + 1;
+            this.categories.push({
+                id: newId,
+                name: category,
+                description: ''
+            });
+            this.saveData('categories', this.categories);
         }
         
         if (editItemId) {

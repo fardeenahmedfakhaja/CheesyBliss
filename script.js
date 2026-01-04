@@ -1,136 +1,84 @@
-// Restaurant Order Management System with Enhanced Features
+// Restaurant Order Management System
 class RestaurantOrderSystem {
     constructor() {
-        // Initialize data structures
-        this.menu = this.loadMenu();
+        // Initialize data
+        this.menu = this.loadData('menu') || this.getDefaultMenu();
         this.categories = this.loadData('categories') || this.getDefaultCategories();
         this.orders = this.loadData('orders') || [];
         this.completedOrders = this.loadData('completedOrders') || [];
         this.orderTemplates = this.loadData('orderTemplates') || [];
         this.settings = this.loadData('settings') || this.getDefaultSettings();
-        this.users = this.loadData('users') || this.getDefaultUsers();
         this.nextOrderId = this.loadData('nextOrderId') || 1001;
-        this.currentUser = this.loadData('currentUser') || null;
-        this.salesChart = null;
-        this.paymentChart = null;
-        this.revenueChart = null;
-        this.orderTypeChart = null;
         
-        // Initialize current order
+        // Current order state
         this.currentOrder = {
             items: [],
             customerName: '',
-            customerNumber: '',
+            customerPhone: '',
             orderType: 'dine-in',
             paymentMethod: 'cash',
-            notes: '',
-            taxRate: this.settings.taxRate || 5
+            notes: ''
         };
         
-        // Setup toastr
-        toastr.options = {
-            positionClass: 'toast-top-right',
-            progressBar: true,
-            timeOut: 3000,
-            extendedTimeOut: 1000,
-            closeButton: true,
-            newestOnTop: true
-        };
+        // Charts
+        this.salesChart = null;
         
-        // Initialize UI
-        this.initEventListeners();
-        this.applySettings();
-        this.renderMenu();
-        this.renderOngoingOrders();
-        this.renderCompletedOrders();
-        this.renderMenuManagement();
-        this.renderAnalytics();
-        this.renderUsers();
-        this.updateBadges();
-        this.updateCategoryDropdown();
-        this.updateQuickItems();
-        this.updateLiveStats();
-        this.updateDateDisplay();
-        
-        // Auto-refresh ongoing orders
-        setInterval(() => this.renderOngoingOrders(), this.settings.autoRefresh * 1000);
-        
-        // Auto-save every minute
-        setInterval(() => this.autoSave(), 60000);
-        
-        // Setup keyboard shortcuts
-        this.setupKeyboardShortcuts();
-        
-        // Check for low stock
-        this.checkLowStock();
-        
-        console.log('Restaurant Order System Enhanced Version Loaded');
+        // Initialize
+        this.init();
     }
     
-    // Default menu data with inventory
-    defaultMenu = [
-        // APPETIZERS
-        { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140, cost: 80, stock: 50, status: 'available' },
-        { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125, cost: 70, stock: 50, status: 'available' },
-        { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99, cost: 40, stock: 100, status: 'available' },
-        { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109, cost: 50, stock: 50, status: 'available' },
-        { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75, cost: 35, stock: 80, status: 'available' },
-        { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99, cost: 50, stock: 80, status: 'available' },
-        
-        // WRAPS
-        { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130, cost: 70, stock: 40, status: 'available' },
-        { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120, cost: 60, stock: 40, status: 'available' },
-        { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150, cost: 80, stock: 40, status: 'available' },
-        { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120, cost: 60, stock: 40, status: 'available' },
-        
-        // BURGERS
-        { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115, cost: 50, stock: 60, status: 'available' },
-        { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135, cost: 70, stock: 60, status: 'available' },
-        
-        // SALADS
-        { id: 13, category: 'SALADS', name: 'Veg salad', price: 99, cost: 40, stock: 30, status: 'available' },
-        { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130, cost: 60, stock: 30, status: 'available' },
-        
-        // DESSERTS
-        { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90, cost: 30, stock: 50, status: 'available' },
-        { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90, cost: 30, stock: 50, status: 'available' },
-        { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130, cost: 50, stock: 30, status: 'available' },
-        { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110, cost: 40, stock: 30, status: 'available' },
-        { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120, cost: 45, stock: 30, status: 'available' }
-    ];
+    // Default menu items
+    getDefaultMenu() {
+        return [
+            // APPETIZERS
+            { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140, cost: 70, stock: 50, status: 'available' },
+            { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125, cost: 60, stock: 50, status: 'available' },
+            { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99, cost: 40, stock: 100, status: 'available' },
+            { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109, cost: 50, stock: 50, status: 'available' },
+            { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75, cost: 35, stock: 80, status: 'available' },
+            { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99, cost: 50, stock: 80, status: 'available' },
+            
+            // WRAPS
+            { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130, cost: 70, stock: 40, status: 'available' },
+            { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120, cost: 60, stock: 40, status: 'available' },
+            { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150, cost: 80, stock: 40, status: 'available' },
+            { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120, cost: 60, stock: 40, status: 'available' },
+            
+            // BURGERS
+            { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115, cost: 50, stock: 60, status: 'available' },
+            { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135, cost: 70, stock: 60, status: 'available' },
+            
+            // SALADS
+            { id: 13, category: 'SALADS', name: 'Veg salad', price: 99, cost: 40, stock: 30, status: 'available' },
+            { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130, cost: 60, stock: 30, status: 'available' },
+            
+            // DESSERTS
+            { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90, cost: 30, stock: 50, status: 'available' },
+            { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90, cost: 30, stock: 50, status: 'available' },
+            { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130, cost: 50, stock: 30, status: 'available' },
+            { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110, cost: 40, stock: 30, status: 'available' },
+            { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120, cost: 45, stock: 30, status: 'available' }
+        ];
+    }
     
     // Default categories
     getDefaultCategories() {
         return [
-            { id: 1, name: 'APPETIZERS', icon: 'fas fa-utensils', description: 'Appetizers and Starters', active: true },
-            { id: 2, name: 'WRAPS', icon: 'fas fa-burrito', description: 'Fresh Wraps', active: true },
-            { id: 3, name: 'BURGERS', icon: 'fas fa-hamburger', description: 'Burgers', active: true },
-            { id: 4, name: 'SALADS', icon: 'fas fa-leaf', description: 'Healthy Salads', active: true },
-            { id: 5, name: 'DESSERTS', icon: 'fas fa-ice-cream', description: 'Sweet Desserts', active: true }
+            'APPETIZERS',
+            'WRAPS', 
+            'BURGERS',
+            'SALADS',
+            'DESSERTS'
         ];
     }
     
     // Default settings
     getDefaultSettings() {
         return {
-            restaurantName: 'Restaurant Order System',
             taxRate: 5,
             currency: '₹',
-            autoRefresh: 10,
-            soundNotifications: true,
-            lowStockAlerts: true,
-            lowStockThreshold: 10,
-            darkMode: false
+            restaurantName: 'Restaurant POS'
         };
-    }
-    
-    // Default users
-    getDefaultUsers() {
-        return [
-            { id: 1, username: 'admin', password: 'admin123', role: 'admin', active: true },
-            { id: 2, username: 'manager', password: 'manager123', role: 'manager', active: true },
-            { id: 3, username: 'cashier', password: 'cashier123', role: 'cashier', active: true }
-        ];
     }
     
     // Local storage methods
@@ -139,8 +87,7 @@ class RestaurantOrderSystem {
             localStorage.setItem(key, JSON.stringify(data));
             return true;
         } catch (e) {
-            console.error('Error saving to localStorage:', e);
-            toastr.error('Error saving data!');
+            console.error('Error saving data:', e);
             return false;
         }
     }
@@ -150,74 +97,42 @@ class RestaurantOrderSystem {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : null;
         } catch (e) {
-            console.error('Error loading from localStorage:', e);
+            console.error('Error loading data:', e);
             return null;
         }
     }
     
-    // Auto-save
+    // Initialize the system
+    init() {
+        this.initEventListeners();
+        this.renderMenu();
+        this.renderOngoingOrders();
+        this.renderCompletedOrders();
+        this.renderMenuManagement();
+        this.updateSummary();
+        this.updateStats();
+        this.updateBadges();
+        this.updateNextOrderNumber();
+        
+        // Auto-save every 30 seconds
+        setInterval(() => this.autoSave(), 30000);
+        
+        // Check if mobile
+        this.checkMobile();
+    }
+    
+    // Check if mobile device
+    checkMobile() {
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+            document.body.classList.add('mobile-view');
+        }
+    }
+    
+    // Auto-save data
     autoSave() {
-        this.saveData('menu', this.menu);
-        this.saveData('orders', this.orders);
-        this.saveData('completedOrders', this.completedOrders);
-        this.saveData('settings', this.settings);
-        this.saveData('users', this.users);
+        this.saveAllData();
         console.log('Auto-save completed');
-    }
-    
-    // Backup data
-    backupData() {
-        const backup = {
-            menu: this.menu,
-            categories: this.categories,
-            orders: this.orders,
-            completedOrders: this.completedOrders,
-            settings: this.settings,
-            users: this.users,
-            orderTemplates: this.orderTemplates,
-            timestamp: new Date().toISOString()
-        };
-        
-        const dataStr = JSON.stringify(backup, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
-        const exportFileDefaultName = `restaurant-backup-${new Date().toISOString().split('T')[0]}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        toastr.success('Backup created successfully!');
-    }
-    
-    // Restore data
-    restoreData(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const backup = JSON.parse(e.target.result);
-                
-                if (confirm('This will overwrite all current data. Are you sure?')) {
-                    this.menu = backup.menu || this.menu;
-                    this.categories = backup.categories || this.categories;
-                    this.orders = backup.orders || [];
-                    this.completedOrders = backup.completedOrders || [];
-                    this.settings = backup.settings || this.settings;
-                    this.users = backup.users || this.users;
-                    this.orderTemplates = backup.orderTemplates || [];
-                    
-                    this.saveAllData();
-                    this.applySettings();
-                    this.renderAll();
-                    toastr.success('Data restored successfully!');
-                }
-            } catch (error) {
-                toastr.error('Invalid backup file!');
-                console.error('Error restoring backup:', error);
-            }
-        };
-        reader.readAsText(file);
     }
     
     // Save all data
@@ -226,216 +141,111 @@ class RestaurantOrderSystem {
         this.saveData('categories', this.categories);
         this.saveData('orders', this.orders);
         this.saveData('completedOrders', this.completedOrders);
-        this.saveData('settings', this.settings);
-        this.saveData('users', this.users);
         this.saveData('orderTemplates', this.orderTemplates);
+        this.saveData('settings', this.settings);
         this.saveData('nextOrderId', this.nextOrderId);
-    }
-    
-    // Apply settings
-    applySettings() {
-        // Apply tax rate
-        this.currentOrder.taxRate = this.settings.taxRate;
-        document.getElementById('tax-percentage').value = this.settings.taxRate;
-        
-        // Apply currency
-        document.querySelectorAll('.currency-symbol').forEach(el => {
-            el.textContent = this.settings.currency;
-        });
-        
-        // Apply dark mode
-        if (this.settings.darkMode) {
-            document.body.setAttribute('data-theme', 'dark');
-            document.getElementById('dark-mode-toggle').innerHTML = '<i class="fas fa-sun"></i>';
-        } else {
-            document.body.removeAttribute('data-theme');
-            document.getElementById('dark-mode-toggle').innerHTML = '<i class="fas fa-moon"></i>';
-        }
-        
-        // Update restaurant name
-        document.getElementById('restaurant-name').value = this.settings.restaurantName;
-        document.querySelector('.brand-text').textContent = this.settings.restaurantName;
     }
     
     // Initialize event listeners
     initEventListeners() {
         // Tab navigation
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', (e) => {
+        document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(element => {
+            element.addEventListener('click', (e) => {
                 e.preventDefault();
-                const tabId = link.getAttribute('data-tab');
+                const tabId = element.getAttribute('data-tab');
                 this.switchTab(tabId);
             });
-        });
-        
-        // Quick actions
-        document.getElementById('quick-clear-btn').addEventListener('click', () => this.clearAllData());
-        document.getElementById('quick-print-btn').addEventListener('click', () => this.printSummary());
-        document.getElementById('dark-mode-toggle').addEventListener('click', () => this.toggleDarkMode());
-        document.getElementById('search-orders').addEventListener('input', (e) => this.searchOrders(e.target.value));
-        
-        // Order taking
-        document.getElementById('place-order-btn').addEventListener('click', () => this.placeOrder());
-        document.getElementById('clear-order-btn').addEventListener('click', () => this.clearCurrentOrder());
-        document.getElementById('hold-order-btn').addEventListener('click', () => this.holdOrder());
-        document.getElementById('save-order-template-btn').addEventListener('click', () => this.saveOrderTemplate());
-        document.getElementById('load-templates-btn').addEventListener('click', () => this.showTemplatesModal());
-        document.getElementById('add-drinks-btn').addEventListener('click', () => this.addQuickCategory('DRINKS'));
-        document.getElementById('add-desserts-btn').addEventListener('click', () => this.addQuickCategory('DESSERTS'));
-        
-        // Menu search
-        document.getElementById('menu-search').addEventListener('input', (e) => this.searchMenu(e.target.value));
-        document.getElementById('clear-search').addEventListener('click', () => {
-            document.getElementById('menu-search').value = '';
-            this.renderMenu();
         });
         
         // Customer info
         document.getElementById('customer-name').addEventListener('input', (e) => {
             this.currentOrder.customerName = e.target.value;
-            this.updateOrderSummary();
+            this.updateSummary();
         });
-        document.getElementById('customer-number').addEventListener('input', (e) => {
-            this.currentOrder.customerNumber = e.target.value;
+        
+        document.getElementById('customer-phone').addEventListener('input', (e) => {
+            this.currentOrder.customerPhone = e.target.value;
         });
+        
         document.getElementById('order-type').addEventListener('change', (e) => {
             this.currentOrder.orderType = e.target.value;
-            this.updateOrderSummary();
+            this.updateSummary();
         });
+        
         document.getElementById('payment-method').addEventListener('change', (e) => {
             this.currentOrder.paymentMethod = e.target.value;
-            this.updateOrderSummary();
-        });
-        document.getElementById('order-notes').addEventListener('input', (e) => {
-            this.currentOrder.notes = e.target.value;
+            this.updateSummary();
         });
         
-        // Tax calculation
-        document.getElementById('tax-percentage').addEventListener('input', (e) => {
-            this.currentOrder.taxRate = parseFloat(e.target.value) || 0;
-            this.updateSelectedItemsTable();
+        // Menu search
+        document.getElementById('menu-search').addEventListener('input', (e) => {
+            this.renderMenu(e.target.value.toLowerCase());
         });
         
-        // Order management
-        document.getElementById('complete-order-btn').addEventListener('click', () => this.completeOrder());
-        document.getElementById('edit-order-btn').addEventListener('click', () => this.editOrder());
+        // Action buttons
+        document.getElementById('clear-order-btn').addEventListener('click', () => this.clearCurrentOrder());
+        document.getElementById('place-order-btn').addEventListener('click', () => this.placeOrder());
+        document.getElementById('save-template-btn').addEventListener('click', () => this.saveOrderTemplate());
+        document.getElementById('hold-order-btn').addEventListener('click', () => this.holdOrder());
         
-        // Completed orders
-        document.getElementById('clear-completed-btn').addEventListener('click', () => this.clearCompletedOrders());
+        // Quick action buttons
+        document.getElementById('quick-drinks').addEventListener('click', () => this.showCategory('DRINKS'));
+        document.getElementById('quick-desserts').addEventListener('click', () => this.showCategory('DESSERTS'));
+        document.getElementById('quick-appetizers').addEventListener('click', () => this.showCategory('APPETIZERS'));
+        document.getElementById('quick-wraps').addEventListener('click', () => this.showCategory('WRAPS'));
+        
+        // Refresh orders
+        document.getElementById('refresh-orders-btn').addEventListener('click', () => this.renderOngoingOrders());
+        
+        // Print all
+        document.getElementById('print-all-btn').addEventListener('click', () => this.printAllOrders());
+        
+        // Download PDF
         document.getElementById('download-pdf-btn').addEventListener('click', () => this.downloadPDFReport());
-        document.getElementById('export-csv-btn').addEventListener('click', () => this.exportCSV());
-        document.getElementById('date-filter').addEventListener('change', () => this.renderCompletedOrders());
         
-        // Ongoing orders filters
-        document.getElementById('filter-preparing-btn').addEventListener('click', () => this.filterOrders('preparing'));
-        document.getElementById('filter-ready-btn').addEventListener('click', () => this.filterOrders('ready'));
-        document.getElementById('filter-all-btn').addEventListener('click', () => this.filterOrders('all'));
-        document.getElementById('print-kitchen-orders-btn').addEventListener('click', () => this.printKitchenOrders());
-        document.getElementById('kitchen-voice-btn').addEventListener('click', () => this.voiceAnnounce());
+        // Clear completed
+        document.getElementById('clear-completed-btn').addEventListener('click', () => this.clearCompletedOrders());
+        
+        // Date filter
+        document.getElementById('date-filter').addEventListener('change', () => this.renderCompletedOrders());
         
         // Menu management
         document.getElementById('menu-item-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveMenuItem();
         });
+        
         document.getElementById('cancel-edit-btn').addEventListener('click', () => this.cancelEditMenuItem());
-        document.getElementById('add-category-btn').addEventListener('click', () => this.showAddCategoryModal());
+        document.getElementById('add-category-btn').addEventListener('click', () => this.showNewCategoryInput());
         document.getElementById('new-category-btn').addEventListener('click', () => this.showNewCategoryInput());
-        document.getElementById('save-new-category-btn').addEventListener('click', () => this.saveNewCategory());
-        document.getElementById('cancel-new-category-btn').addEventListener('click', () => this.hideNewCategoryInput());
-        document.getElementById('import-menu-btn').addEventListener('click', () => document.getElementById('import-menu-file').click());
-        document.getElementById('export-menu-btn').addEventListener('click', () => this.exportMenu());
-        document.getElementById('import-menu-file').addEventListener('change', (e) => this.importMenu(e.target.files[0]));
+        document.getElementById('save-category-btn').addEventListener('click', () => this.saveNewCategory());
+        document.getElementById('cancel-category-btn').addEventListener('click', () => this.hideNewCategoryInput());
         
-        // Category form
-        document.getElementById('category-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addNewCategory();
+        // Complete order in modal
+        document.getElementById('complete-order-btn').addEventListener('click', () => {
+            const orderId = parseInt(document.getElementById('complete-order-btn').getAttribute('data-order-id'));
+            this.completeOrder(orderId);
         });
         
-        // Settings
-        document.getElementById('system-settings-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.saveSettings();
-        });
-        document.getElementById('backup-data-btn').addEventListener('click', () => this.backupData());
-        document.getElementById('restore-data-btn').addEventListener('click', () => document.getElementById('import-data-file').click());
-        document.getElementById('reset-data-btn').addEventListener('click', () => this.resetData());
-        document.getElementById('import-data-file').addEventListener('change', (e) => this.restoreData(e.target.files[0]));
-        document.getElementById('test-print-btn').addEventListener('click', () => this.testPrint());
-        
-        // User management
-        document.getElementById('add-user-btn').addEventListener('click', () => this.showAddUserModal());
-        document.getElementById('user-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.addUser();
-        });
-        
-        // Play notification sound
-        if (this.settings.soundNotifications) {
-            document.getElementById('notification-sound').volume = 0.3;
-        }
-    }
-    
-    // Setup keyboard shortcuts
-    setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            // Only trigger when not in input field
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            switch(e.key) {
-                case 'F1':
-                    e.preventDefault();
-                    document.getElementById('place-order-btn').click();
-                    break;
-                case 'F2':
-                    e.preventDefault();
-                    document.getElementById('clear-order-btn').click();
-                    break;
-                case 'F3':
-                    e.preventDefault();
-                    this.switchTab('ongoing-orders');
-                    break;
-                case 'F4':
-                    e.preventDefault();
-                    this.switchTab('completed-orders');
-                    break;
-                case 'F5':
-                    e.preventDefault();
-                    this.switchTab('take-order');
-                    break;
-                case 'Escape':
-                    e.preventDefault();
-                    this.clearCurrentOrder();
-                    break;
-                case 'd':
-                    if (e.ctrlKey) {
-                        e.preventDefault();
-                        this.downloadPDFReport();
-                    }
-                    break;
-            }
-        });
-    }
-    
-    // Play notification sound
-    playNotification(type = 'success') {
-        if (!this.settings.soundNotifications) return;
-        
-        const audio = document.getElementById('notification-sound');
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log('Audio play failed:', e));
-        }
+        // Window resize for mobile
+        window.addEventListener('resize', () => this.checkMobile());
     }
     
     // Switch between tabs
     switchTab(tabId) {
-        // Update active tab in navigation
+        // Update active tab in desktop nav
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('data-tab') === tabId) {
                 link.classList.add('active');
+            }
+        });
+        
+        // Update active tab in mobile nav
+        document.querySelectorAll('.mobile-nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('data-tab') === tabId) {
+                item.classList.add('active');
             }
         });
         
@@ -447,70 +257,38 @@ class RestaurantOrderSystem {
             }
         });
         
-        // Update data if needed
+        // Scroll to top on mobile
+        if (window.innerWidth <= 768) {
+            window.scrollTo(0, 0);
+        }
+        
+        // Update content if needed
         if (tabId === 'ongoing-orders') {
             this.renderOngoingOrders();
         } else if (tabId === 'completed-orders') {
             this.renderCompletedOrders();
         } else if (tabId === 'menu-management') {
             this.renderMenuManagement();
-        } else if (tabId === 'analytics') {
-            this.renderAnalytics();
         }
     }
     
-    // Update date display
-    updateDateDisplay() {
-        const now = new Date();
-        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
-    }
-    
-    // Update live stats
-    updateLiveStats() {
-        // Today's date
-        const today = new Date().toISOString().split('T')[0];
-        
-        // Today's completed orders
-        const todayOrders = this.completedOrders.filter(order => 
-            order.completedTime && order.completedTime.startsWith(today)
-        );
-        
-        // Today's revenue
-        const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
-        
-        // Update display
-        document.getElementById('live-ongoing').textContent = this.orders.length;
-        document.getElementById('live-completed').textContent = todayOrders.length;
-        document.getElementById('live-revenue').textContent = `${this.settings.currency}${todayRevenue}`;
-        document.getElementById('today-revenue').textContent = `${this.settings.currency}${todayRevenue}`;
-    }
-    
     // Render menu items
-    renderMenu() {
+    renderMenu(searchTerm = '') {
         const container = document.getElementById('menu-items-container');
-        const searchTerm = document.getElementById('menu-search').value.toLowerCase();
-        
         container.innerHTML = '';
-        
-        // Filter active categories
-        const activeCategories = this.categories.filter(cat => cat.active);
         
         // Group items by category
         const categories = {};
         this.menu.forEach(item => {
-            if (!item.status || item.status === 'available') {
-                if (!categories[item.category]) {
-                    categories[item.category] = [];
-                }
-                categories[item.category].push(item);
+            if (!categories[item.category]) {
+                categories[item.category] = [];
             }
+            categories[item.category].push(item);
         });
         
         // Create category sections
-        activeCategories.forEach(category => {
-            const catName = category.name;
-            const items = categories[catName] || [];
+        this.categories.forEach(categoryName => {
+            const items = categories[categoryName] || [];
             
             // Filter by search term
             const filteredItems = items.filter(item => 
@@ -519,46 +297,46 @@ class RestaurantOrderSystem {
                 item.category.toLowerCase().includes(searchTerm)
             );
             
-            if (filteredItems.length === 0) return;
+            if (filteredItems.length === 0 && searchTerm !== '') return;
             
             const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'menu-category col-12';
+            categoryDiv.className = 'menu-category';
             categoryDiv.innerHTML = `
-                <h5>
-                    <i class="${category.icon || 'fas fa-utensils'} me-2"></i>
-                    ${catName}
-                    <span class="badge bg-secondary float-end">${filteredItems.length} items</span>
-                </h5>
-                <div class="row" id="category-${catName}"></div>
+                <h6>${categoryName}</h6>
+                <div class="row" id="category-${categoryName}"></div>
             `;
             
-            const itemsContainer = categoryDiv.querySelector(`#category-${catName}`);
+            const itemsContainer = categoryDiv.querySelector(`#category-${categoryName}`);
             
             filteredItems.forEach(item => {
+                const colSize = window.innerWidth <= 576 ? 'col-6' : 'col-md-4 col-lg-3';
                 const itemDiv = document.createElement('div');
-                itemDiv.className = 'col-md-6 col-lg-4 mb-3';
+                itemDiv.className = `${colSize}`;
                 
-                // Check stock status
-                const isLowStock = item.stock < (this.settings.lowStockThreshold || 10);
+                // Check if item is in current order
+                const currentItem = this.currentOrder.items.find(i => i.id === item.id);
+                const quantity = currentItem ? currentItem.quantity : 0;
+                const isSelected = quantity > 0;
                 const isOutOfStock = item.stock <= 0;
                 
                 itemDiv.innerHTML = `
-                    <div class="menu-item-card ${isOutOfStock ? 'opacity-50' : ''}" data-item-id="${item.id}">
-                        ${isLowStock && !isOutOfStock ? 
-                            '<span class="badge bg-warning position-absolute top-0 end-0 m-2">Low Stock</span>' : ''}
-                        ${isOutOfStock ? 
-                            '<span class="badge bg-danger position-absolute top-0 end-0 m-2">Out of Stock</span>' : ''}
+                    <div class="menu-item-card ${isSelected ? 'selected' : ''} ${isOutOfStock ? 'opacity-50' : ''}" 
+                         data-item-id="${item.id}">
+                        ${isOutOfStock ? '<span class="badge bg-danger position-absolute top-0 end-0 m-1">Out of Stock</span>' : ''}
                         <div>
                             <div class="menu-item-name">${item.name}</div>
-                            <div class="menu-item-price">${this.settings.currency}${item.price}</div>
-                            ${item.cost ? `<div class="small text-muted mt-1">Cost: ${this.settings.currency}${item.cost}</div>` : ''}
-                            ${item.stock !== undefined ? `<div class="small mt-1">Stock: ${item.stock}</div>` : ''}
+                            <div class="menu-item-price">₹${item.price}</div>
+                            ${item.stock !== undefined ? `<small class="text-muted">Stock: ${item.stock}</small>` : ''}
                         </div>
                         <div class="menu-item-quantity">
-                            <button class="quantity-btn minus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>-</button>
-                            <input type="number" class="quantity-input" id="qty-${item.id}" value="0" min="0" 
-                                   data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
-                            <button class="quantity-btn plus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>+</button>
+                            <button class="quantity-btn minus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" class="quantity-input" id="qty-${item.id}" 
+                                   value="${quantity}" min="0" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
+                            <button class="quantity-btn plus-btn" data-item-id="${item.id}" ${isOutOfStock ? 'disabled' : ''}>
+                                <i class="fas fa-plus"></i>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -582,85 +360,7 @@ class RestaurantOrderSystem {
         });
     }
     
-    // Search menu
-    searchMenu(term) {
-        this.renderMenu();
-    }
-    
-    // Search orders
-    searchOrders(term) {
-        // Implement order search functionality
-        console.log('Searching orders for:', term);
-    }
-    
-    // Update quick items
-    updateQuickItems() {
-        const container = document.getElementById('quick-items');
-        container.innerHTML = '';
-        
-        // Get top 6 popular items from completed orders
-        const popularItems = this.getPopularItems(6);
-        
-        popularItems.forEach(item => {
-            const col = document.createElement('div');
-            col.className = 'col-6 col-md-4';
-            col.innerHTML = `
-                <button class="btn btn-outline-secondary w-100 quick-item-btn" data-item-id="${item.id}">
-                    ${item.name} (${this.settings.currency}${item.price})
-                </button>
-            `;
-            container.appendChild(col);
-            
-            col.querySelector('.quick-item-btn').addEventListener('click', () => {
-                this.addQuickItem(item.id);
-            });
-        });
-    }
-    
-    // Get popular items
-    getPopularItems(limit = 10) {
-        const itemCounts = {};
-        
-        this.completedOrders.forEach(order => {
-            order.items.forEach(orderItem => {
-                const menuItem = this.menu.find(item => item.name === orderItem.name);
-                if (menuItem) {
-                    if (!itemCounts[menuItem.id]) {
-                        itemCounts[menuItem.id] = {
-                            ...menuItem,
-                            count: 0
-                        };
-                    }
-                    itemCounts[menuItem.id].count += orderItem.quantity;
-                }
-            });
-        });
-        
-        return Object.values(itemCounts)
-            .sort((a, b) => b.count - a.count)
-            .slice(0, limit);
-    }
-    
-    // Add quick item
-    addQuickItem(itemId) {
-        const input = document.getElementById(`qty-${itemId}`);
-        if (input) {
-            let currentValue = parseInt(input.value) || 0;
-            input.value = currentValue + 1;
-            this.setQuantity(itemId, currentValue + 1);
-        }
-    }
-    
-    // Add quick category
-    addQuickCategory(category) {
-        // Scroll to category
-        const categoryElement = document.querySelector(`#category-${category}`);
-        if (categoryElement) {
-            categoryElement.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-    
-    // Adjust quantity
+    // Adjust item quantity
     adjustQuantity(itemId, change) {
         const input = document.getElementById(`qty-${itemId}`);
         if (!input) return;
@@ -670,31 +370,24 @@ class RestaurantOrderSystem {
         
         if (newValue < 0) newValue = 0;
         
+        // Check stock
         const menuItem = this.menu.find(item => item.id === itemId);
         if (menuItem && menuItem.stock !== undefined && newValue > menuItem.stock) {
             newValue = menuItem.stock;
-            toastr.warning(`Only ${menuItem.stock} items available in stock!`);
+            this.showNotification(`Only ${menuItem.stock} items available in stock!`, 'warning');
         }
         
         input.value = newValue;
         this.setQuantity(itemId, newValue);
     }
     
-    // Set quantity
+    // Set item quantity
     setQuantity(itemId, quantity) {
         // Find the item in current order
         const existingItemIndex = this.currentOrder.items.findIndex(item => item.id === itemId);
         
         if (quantity > 0) {
             const menuItem = this.menu.find(item => item.id === itemId);
-            
-            if (!menuItem) return;
-            
-            // Check stock
-            if (menuItem.stock !== undefined && quantity > menuItem.stock) {
-                quantity = menuItem.stock;
-                toastr.warning(`Only ${menuItem.stock} items available in stock!`);
-            }
             
             if (existingItemIndex >= 0) {
                 // Update existing item
@@ -717,15 +410,19 @@ class RestaurantOrderSystem {
         
         // Update UI
         this.updateSelectedItemsTable();
-        this.updateOrderSummary();
+        this.updateSummary();
         
-        // Highlight selected menu item
+        // Update menu item card
         const menuCard = document.querySelector(`.menu-item-card[data-item-id="${itemId}"]`);
-        if (menuCard) {
+        const qtyInput = document.getElementById(`qty-${itemId}`);
+        
+        if (menuCard && qtyInput) {
             if (quantity > 0) {
                 menuCard.classList.add('selected');
+                qtyInput.value = quantity;
             } else {
                 menuCard.classList.remove('selected');
+                qtyInput.value = 0;
             }
         }
     }
@@ -733,78 +430,69 @@ class RestaurantOrderSystem {
     // Update selected items table
     updateSelectedItemsTable() {
         const tbody = document.getElementById('selected-items-body');
-        tbody.innerHTML = '';
         
-        let subtotal = 0;
-        
-        this.currentOrder.items.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>
-                    <div class="input-group input-group-sm" style="width: 120px;">
-                        <button class="btn btn-outline-secondary" type="button" onclick="restaurantSystem.adjustQuantity(${item.id}, -1)">-</button>
-                        <input type="number" class="form-control text-center" value="${item.quantity}" min="1" 
-                               onchange="restaurantSystem.setQuantity(${item.id}, this.value)">
-                        <button class="btn btn-outline-secondary" type="button" onclick="restaurantSystem.adjustQuantity(${item.id}, 1)">+</button>
-                    </div>
-                </td>
-                <td>${this.settings.currency}${item.price}</td>
-                <td>${this.settings.currency}${item.total}</td>
-                <td>
-                    <input type="text" class="form-control form-control-sm" placeholder="Notes" 
-                           onchange="restaurantSystem.updateItemNotes(${item.id}, this.value)">
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-danger" onclick="restaurantSystem.setQuantity(${item.id}, 0)">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-            subtotal += item.total;
-        });
-        
-        const taxAmount = subtotal * (this.currentOrder.taxRate / 100);
-        const grandTotal = subtotal + taxAmount;
-        
-        document.getElementById('subtotal').textContent = `${this.settings.currency}${subtotal}`;
-        document.getElementById('tax-amount').textContent = `${this.settings.currency}${taxAmount.toFixed(2)}`;
-        document.getElementById('grand-total').textContent = `${this.settings.currency}${grandTotal.toFixed(2)}`;
-        
-        // Show/hide table based on items
         if (this.currentOrder.items.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-muted py-4">
-                        <i class="fas fa-shopping-cart fa-2x mb-3"></i>
-                        <p>No items selected. Click on menu items to add them to the order.</p>
+                    <td colspan="5" class="text-center text-muted py-4">
+                        No items selected
                     </td>
-                </tr>`;
+                </tr>
+            `;
+            
+            document.getElementById('subtotal').textContent = '₹0';
+            document.getElementById('tax-amount').textContent = '₹0';
+            document.getElementById('grand-total').textContent = '₹0';
+            
+            return;
         }
-    }
-    
-    // Update item notes
-    updateItemNotes(itemId, notes) {
-        const itemIndex = this.currentOrder.items.findIndex(item => item.id === itemId);
-        if (itemIndex >= 0) {
-            this.currentOrder.items[itemIndex].notes = notes;
-        }
+        
+        let html = '';
+        let subtotal = 0;
+        
+        this.currentOrder.items.forEach((item, index) => {
+            subtotal += item.total;
+            html += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>
+                        <div class="input-group input-group-sm" style="width: 100px;">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="restaurantSystem.adjustQuantity(${item.id}, -1)">-</button>
+                            <input type="number" class="form-control text-center" 
+                                   value="${item.quantity}" min="1" 
+                                   onchange="restaurantSystem.setQuantity(${item.id}, this.value)">
+                            <button class="btn btn-outline-secondary" type="button" 
+                                    onclick="restaurantSystem.adjustQuantity(${item.id}, 1)">+</button>
+                        </div>
+                    </td>
+                    <td>₹${item.price}</td>
+                    <td>₹${item.total}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-danger" 
+                                onclick="restaurantSystem.setQuantity(${item.id}, 0)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+        
+        const tax = subtotal * 0.05;
+        const grandTotal = subtotal + tax;
+        
+        document.getElementById('subtotal').textContent = `₹${subtotal}`;
+        document.getElementById('tax-amount').textContent = `₹${tax.toFixed(2)}`;
+        document.getElementById('grand-total').textContent = `₹${grandTotal.toFixed(2)}`;
     }
     
     // Update order summary
-    updateOrderSummary() {
-        // Update order number display
-        document.getElementById('display-order-no').textContent = this.nextOrderId;
-        
+    updateSummary() {
         // Update customer info
-        document.getElementById('display-customer').textContent = 
+        document.getElementById('summary-customer').textContent = 
             this.currentOrder.customerName || 'Not specified';
-        
-        // Update time
-        const now = new Date();
-        document.getElementById('display-time').textContent = 
-            now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         // Update order type
         const typeMap = {
@@ -812,115 +500,136 @@ class RestaurantOrderSystem {
             'takeaway': 'Takeaway',
             'delivery': 'Delivery'
         };
-        document.getElementById('display-type').textContent = typeMap[this.currentOrder.orderType] || 'Dine In';
-        
-        // Update items summary
-        const summaryContainer = document.getElementById('summary-items');
-        summaryContainer.innerHTML = '';
-        
-        let subtotal = 0;
-        
-        this.currentOrder.items.forEach(item => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'd-flex justify-content-between mb-1';
-            itemDiv.innerHTML = `
-                <span class="small">${item.name} x${item.quantity}</span>
-                <span class="small">${this.settings.currency}${item.total}</span>
-            `;
-            summaryContainer.appendChild(itemDiv);
-            subtotal += item.total;
-        });
-        
-        if (this.currentOrder.items.length === 0) {
-            summaryContainer.innerHTML = '<p class="text-muted text-center small">No items selected</p>';
-        }
-        
-        const taxAmount = subtotal * (this.currentOrder.taxRate / 100);
-        const grandTotal = subtotal + taxAmount;
-        
-        document.getElementById('summary-subtotal').textContent = `${this.settings.currency}${subtotal}`;
-        document.getElementById('summary-tax').textContent = `${this.settings.currency}${taxAmount.toFixed(2)}`;
-        document.getElementById('summary-total').textContent = `${this.settings.currency}${grandTotal.toFixed(2)}`;
+        document.getElementById('summary-type').textContent = typeMap[this.currentOrder.orderType] || 'Dine In';
         
         // Update payment method
         const paymentMap = {
             'cash': 'Cash',
             'card': 'Card',
-            'upi': 'UPI',
-            'online': 'Online'
+            'upi': 'UPI'
         };
         document.getElementById('summary-payment').textContent = 
             paymentMap[this.currentOrder.paymentMethod] || 'Cash';
+        
+        // Update items in summary
+        const container = document.getElementById('summary-items');
+        let html = '';
+        let subtotal = 0;
+        
+        this.currentOrder.items.forEach(item => {
+            subtotal += item.total;
+            html += `
+                <div class="summary-item">
+                    <span>${item.name} x${item.quantity}</span>
+                    <span>₹${item.total}</span>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html || '<div class="text-muted small">No items selected</div>';
+        
+        // Update totals
+        const tax = subtotal * 0.05;
+        const grandTotal = subtotal + tax;
+        
+        document.getElementById('summary-subtotal').textContent = `₹${subtotal}`;
+        document.getElementById('summary-tax').textContent = `₹${tax.toFixed(2)}`;
+        document.getElementById('summary-total').textContent = `₹${grandTotal.toFixed(2)}`;
+    }
+    
+    // Update stats
+    updateStats() {
+        // Today's date
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Filter today's completed orders
+        const todayOrders = this.completedOrders.filter(order => 
+            order.completedTime && order.completedTime.startsWith(today)
+        );
+        
+        // Calculate stats
+        const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+        const todayItems = todayOrders.reduce((sum, order) => 
+            sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
+        
+        // Update display
+        document.getElementById('today-orders').textContent = todayOrders.length;
+        document.getElementById('today-revenue').textContent = `₹${todayRevenue}`;
+        document.getElementById('today-items').textContent = todayItems;
+    }
+    
+    // Update badges
+    updateBadges() {
+        document.getElementById('ongoing-badge').textContent = this.orders.length;
+        document.getElementById('completed-badge').textContent = this.completedOrders.length;
+        document.getElementById('mobile-ongoing-badge').textContent = this.orders.length;
+        document.getElementById('mobile-completed-badge').textContent = this.completedOrders.length;
+    }
+    
+    // Update next order number
+    updateNextOrderNumber() {
+        document.getElementById('next-order-number').textContent = this.nextOrderId;
     }
     
     // Place new order
     placeOrder() {
         if (this.currentOrder.items.length === 0) {
-            toastr.error('Please add at least one item to the order');
+            this.showNotification('Please add items to the order', 'error');
             return;
         }
         
         // Check stock availability
         for (const item of this.currentOrder.items) {
             const menuItem = this.menu.find(m => m.id === item.id);
-            if (menuItem && menuItem.stock !== undefined && menuItem.stock < item.quantity) {
-                toastr.error(`Insufficient stock for ${item.name}. Available: ${menuItem.stock}`);
+            if (menuItem && menuItem.stock < item.quantity) {
+                this.showNotification(`Insufficient stock for ${item.name}`, 'error');
                 return;
             }
         }
         
         // Calculate totals
         const subtotal = this.currentOrder.items.reduce((sum, item) => sum + item.total, 0);
-        const taxAmount = subtotal * (this.currentOrder.taxRate / 100);
-        const grandTotal = subtotal + taxAmount;
+        const tax = subtotal * 0.05;
+        const grandTotal = subtotal + tax;
         
-        // Create order object
+        // Create order
         const order = {
             id: this.nextOrderId++,
             customerName: this.currentOrder.customerName,
-            customerNumber: this.currentOrder.customerNumber,
+            customerPhone: this.currentOrder.customerPhone,
             orderType: this.currentOrder.orderType,
             paymentMethod: this.currentOrder.paymentMethod,
-            notes: this.currentOrder.notes,
             items: [...this.currentOrder.items],
             subtotal: subtotal,
-            tax: taxAmount,
+            tax: tax,
             total: grandTotal,
             orderTime: new Date().toISOString(),
             status: 'preparing',
-            placedBy: this.currentUser ? this.currentUser.username : 'System'
+            placedBy: 'System'
         };
         
         // Deduct stock
         this.deductStock(order.items);
         
-        // Add to orders array
+        // Add to orders
         this.orders.unshift(order);
         
         // Save data
-        this.saveData('orders', this.orders);
-        this.saveData('nextOrderId', this.nextOrderId);
-        this.saveData('menu', this.menu);
+        this.saveAllData();
         
         // Clear current order
         this.clearCurrentOrder();
         
-        // Switch to ongoing orders tab
-        this.switchTab('ongoing-orders');
-        
-        // Update badges and stats
+        // Update UI
         this.updateBadges();
-        this.updateLiveStats();
+        this.updateStats();
+        this.updateNextOrderNumber();
         
         // Show success message
-        toastr.success(`Order #${order.id} placed successfully!`);
-        this.playNotification('success');
+        this.showNotification(`Order #${order.id} placed successfully!`, 'success');
         
-        // Add recent activity
-        this.addRecentActivity(`Order #${order.id} placed`, 'success');
-        
-        // Render ongoing orders
-        this.renderOngoingOrders();
+        // Switch to ongoing orders tab
+        this.switchTab('ongoing-orders');
     }
     
     // Deduct stock from inventory
@@ -939,10 +648,41 @@ class RestaurantOrderSystem {
         });
     }
     
-    // Hold order (save as template)
-    holdOrder() {
+    // Clear current order
+    clearCurrentOrder() {
+        this.currentOrder = {
+            items: [],
+            customerName: '',
+            customerPhone: '',
+            orderType: 'dine-in',
+            paymentMethod: 'cash',
+            notes: ''
+        };
+        
+        // Reset form
+        document.getElementById('customer-name').value = '';
+        document.getElementById('customer-phone').value = '';
+        document.getElementById('order-type').value = 'dine-in';
+        document.getElementById('payment-method').value = 'cash';
+        
+        // Reset all quantity inputs
+        this.menu.forEach(item => {
+            const input = document.getElementById(`qty-${item.id}`);
+            if (input) input.value = 0;
+            
+            const menuCard = document.querySelector(`.menu-item-card[data-item-id="${item.id}"]`);
+            if (menuCard) menuCard.classList.remove('selected');
+        });
+        
+        // Update UI
+        this.updateSelectedItemsTable();
+        this.updateSummary();
+    }
+    
+    // Save order template
+    saveOrderTemplate() {
         if (this.currentOrder.items.length === 0) {
-            toastr.error('No items to hold');
+            this.showNotification('No items to save as template', 'error');
             return;
         }
         
@@ -961,142 +701,43 @@ class RestaurantOrderSystem {
         this.orderTemplates.push(template);
         this.saveData('orderTemplates', this.orderTemplates);
         
-        toastr.success(`Template "${templateName}" saved successfully!`);
+        this.showNotification(`Template "${templateName}" saved!`, 'success');
     }
     
-    // Save order template
-    saveOrderTemplate() {
-        this.holdOrder();
-    }
-    
-    // Show templates modal
-    showTemplatesModal() {
-        const container = document.getElementById('templates-container');
-        container.innerHTML = '';
-        
-        if (this.orderTemplates.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted">No templates saved yet.</p>';
-        } else {
-            this.orderTemplates.forEach(template => {
-                const col = document.createElement('div');
-                col.className = 'col-md-4 mb-3';
-                col.innerHTML = `
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">${template.name}</h5>
-                            <p class="card-text small">
-                                ${template.items.length} items<br>
-                                Customer: ${template.customerName || 'N/A'}<br>
-                                Type: ${template.orderType}<br>
-                                Created: ${new Date(template.createdAt).toLocaleDateString()}
-                            </p>
-                            <button class="btn btn-sm btn-primary w-100 load-template-btn" data-template-id="${template.id}">
-                                Load Template
-                            </button>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(col);
-            });
+    // Hold order
+    holdOrder() {
+        if (this.currentOrder.items.length === 0) {
+            this.showNotification('No items to hold', 'error');
+            return;
         }
         
-        // Add event listeners
-        document.querySelectorAll('.load-template-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const templateId = parseInt(e.target.getAttribute('data-template-id'));
-                this.loadTemplate(templateId);
-                
-                const modal = bootstrap.Modal.getInstance(document.getElementById('templatesModal'));
-                modal.hide();
-            });
-        });
-        
-        const modal = new bootstrap.Modal(document.getElementById('templatesModal'));
-        modal.show();
-    }
-    
-    // Load template
-    loadTemplate(templateId) {
-        const template = this.orderTemplates.find(t => t.id === templateId);
-        if (!template) return;
-        
-        // Clear current order first
-        this.clearCurrentOrder();
-        
-        // Load template data
-        this.currentOrder.customerName = template.customerName;
-        this.currentOrder.orderType = template.orderType;
-        document.getElementById('customer-name').value = template.customerName || '';
-        document.getElementById('order-type').value = template.orderType;
-        
-        // Load items
-        template.items.forEach(item => {
-            this.setQuantity(item.id, item.quantity);
-        });
-        
-        toastr.success(`Template "${template.name}" loaded!`);
-    }
-    
-    // Clear current order
-    clearCurrentOrder() {
-        this.currentOrder = {
-            items: [],
-            customerName: '',
-            customerNumber: '',
-            orderType: 'dine-in',
-            paymentMethod: 'cash',
-            notes: '',
-            taxRate: this.settings.taxRate
+        // Create temporary order
+        const tempOrder = {
+            id: `TEMP_${Date.now()}`,
+            ...this.currentOrder,
+            orderTime: new Date().toISOString(),
+            status: 'hold'
         };
         
-        // Reset form
-        document.getElementById('customer-name').value = '';
-        document.getElementById('customer-number').value = '';
-        document.getElementById('order-type').value = 'dine-in';
-        document.getElementById('payment-method').value = 'cash';
-        document.getElementById('order-notes').value = '';
-        document.getElementById('tax-percentage').value = this.settings.taxRate;
+        this.orders.unshift(tempOrder);
+        this.saveData('orders', this.orders);
         
-        // Reset all quantity inputs
-        this.menu.forEach(item => {
-            const input = document.getElementById(`qty-${item.id}`);
-            if (input) input.value = 0;
-            
-            const menuCard = document.querySelector(`.menu-item-card[data-item-id="${item.id}"]`);
-            if (menuCard) menuCard.classList.remove('selected');
-        });
+        this.clearCurrentOrder();
+        this.updateBadges();
         
-        // Update UI
-        this.updateSelectedItemsTable();
-        this.updateOrderSummary();
+        this.showNotification('Order placed on hold', 'success');
+        this.switchTab('ongoing-orders');
     }
     
-    // Clear all data
-    clearAllData() {
-        if (confirm('Are you sure you want to clear all current data? This cannot be undone.')) {
-            this.orders = [];
-            this.saveData('orders', this.orders);
-            this.renderOngoingOrders();
-            this.updateBadges();
-            toastr.success('All orders cleared!');
+    // Show category
+    showCategory(category) {
+        const element = document.querySelector(`#category-${category}`);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
         }
     }
     
-    // Print summary
-    printSummary() {
-        window.print();
-    }
-    
-    // Toggle dark mode
-    toggleDarkMode() {
-        this.settings.darkMode = !this.settings.darkMode;
-        this.saveData('settings', this.settings);
-        this.applySettings();
-        
-        toastr.info(`Dark mode ${this.settings.darkMode ? 'enabled' : 'disabled'}`);
-    }
-    
-    // Render ongoing orders with enhanced features
+    // Render ongoing orders
     renderOngoingOrders() {
         const tbody = document.getElementById('ongoing-orders-body');
         const emptyState = document.getElementById('no-ongoing-orders');
@@ -1104,277 +745,175 @@ class RestaurantOrderSystem {
         if (this.orders.length === 0) {
             tbody.innerHTML = '';
             emptyState.style.display = 'block';
-            this.updateKitchenDashboard();
             return;
         }
         
         emptyState.style.display = 'none';
-        tbody.innerHTML = '';
+        let html = '';
         
-        // Sort by order time (newest first)
-        const sortedOrders = [...this.orders].sort((a, b) => 
-            new Date(b.orderTime) - new Date(a.orderTime)
-        );
-        
-        // Calculate statistics
-        let preparingCount = 0;
-        let readyCount = 0;
-        let totalWaitTime = 0;
-        
-        sortedOrders.forEach(order => {
-            // Count by status
-            if (order.status === 'preparing') preparingCount++;
-            if (order.status === 'ready') readyCount++;
-            
-            // Calculate wait time
+        this.orders.forEach(order => {
             const orderTime = new Date(order.orderTime);
-            const now = new Date();
-            const waitMinutes = Math.floor((now - orderTime) / (1000 * 60));
-            totalWaitTime += waitMinutes;
-            
-            // Get items preview
-            const itemsPreview = order.items.slice(0, 2).map(item => 
-                `${item.name} (x${item.quantity})`
-            ).join(', ');
-            
+            const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+            const itemsText = order.items.slice(0, 2).map(item => `${item.name} (x${item.quantity})`).join(', ');
             const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} more` : '';
             
-            // Order type badge
-            const typeBadgeClass = `order-type-${order.orderType}`;
-            const typeText = order.orderType.charAt(0).toUpperCase() + order.orderType.slice(1);
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>#${order.id}</strong></td>
-                <td>${new Date(order.orderTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                <td>${order.customerName || 'Walk-in'}</td>
-                <td>${itemsPreview}${moreItems}</td>
-                <td>${this.settings.currency}${order.total.toFixed(2)}</td>
-                <td>
-                    <span class="status-badge status-${order.status}">${order.status}</span>
-                </td>
-                <td>${waitMinutes} min</td>
-                <td>
-                    <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary view-order-btn" data-order-id="${order.id}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-outline-success complete-order-btn" data-order-id="${order.id}">
-                            <i class="fas fa-check"></i>
-                        </button>
-                        <button class="btn btn-outline-warning mark-ready-btn" data-order-id="${order.id}">
-                            <i class="fas fa-clock"></i>
-                        </button>
-                        <button class="btn btn-outline-danger delete-order-btn" data-order-id="${order.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
+            html += `
+                <tr>
+                    <td><strong>#${order.id}</strong></td>
+                    <td>${orderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                    <td>${order.customerName || 'Walk-in'}</td>
+                    <td>${itemsText}${moreItems}</td>
+                    <td>₹${order.total.toFixed(2)}</td>
+                    <td>
+                        <span class="status-badge status-${order.status}">
+                            ${order.status}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary view-order-btn" data-order-id="${order.id}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-success complete-order-btn" data-order-id="${order.id}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="btn btn-outline-danger delete-order-btn" data-order-id="${order.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
             `;
-            
-            tbody.appendChild(row);
         });
         
-        // Update kitchen dashboard
-        this.updateKitchenDashboard(preparingCount, readyCount, totalWaitTime);
+        tbody.innerHTML = html;
         
         // Add event listeners
-        this.addOrderEventListeners();
-        
-        // Update badge
-        this.updateBadges();
-    }
-    
-    // Update kitchen dashboard
-    updateKitchenDashboard(preparingCount = 0, readyCount = 0, totalWaitTime = 0) {
-        const totalOrders = preparingCount + readyCount;
-        
-        // Update progress bars
-        const preparingPercent = totalOrders > 0 ? (preparingCount / totalOrders) * 100 : 0;
-        const readyPercent = totalOrders > 0 ? (readyCount / totalOrders) * 100 : 0;
-        
-        document.getElementById('preparing-progress').style.width = `${preparingPercent}%`;
-        document.getElementById('preparing-progress').textContent = `Preparing: ${preparingCount}`;
-        
-        document.getElementById('ready-progress').style.width = `${readyPercent}%`;
-        document.getElementById('ready-progress').textContent = `Ready: ${readyCount}`;
-        
-        // Update average wait time
-        const avgWaitTime = totalOrders > 0 ? Math.round(totalWaitTime / totalOrders) : 0;
-        document.getElementById('avg-wait-time').textContent = avgWaitTime;
-        
-        // Check for long wait times
-        if (avgWaitTime > 30) {
-            document.getElementById('long-wait-alert').style.display = 'block';
-            document.getElementById('alert-message').textContent = `High average wait time: ${avgWaitTime} minutes`;
-        } else {
-            document.getElementById('long-wait-alert').style.display = 'none';
-        }
-    }
-    
-    // Add order event listeners
-    addOrderEventListeners() {
-        // View order
         document.querySelectorAll('.view-order-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
-                this.showOrderDetails(orderId);
+                const orderId = e.currentTarget.getAttribute('data-order-id');
+                this.viewOrderDetails(orderId);
             });
         });
         
-        // Complete order
         document.querySelectorAll('.complete-order-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
-                this.completeOrderDirectly(orderId);
+                const orderId = e.currentTarget.getAttribute('data-order-id');
+                this.completeOrder(orderId);
             });
         });
         
-        // Mark as ready
-        document.querySelectorAll('.mark-ready-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
-                this.markOrderReady(orderId);
-            });
-        });
-        
-        // Delete order
         document.querySelectorAll('.delete-order-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const orderId = parseInt(e.currentTarget.getAttribute('data-order-id'));
+                const orderId = e.currentTarget.getAttribute('data-order-id');
                 this.deleteOrder(orderId);
             });
         });
     }
     
-    // Mark order as ready
-    markOrderReady(orderId) {
-        const order = this.orders.find(o => o.id === orderId);
-        if (order) {
-            order.status = 'ready';
-            order.readyTime = new Date().toISOString();
-            this.saveData('orders', this.orders);
-            this.renderOngoingOrders();
-            toastr.success(`Order #${orderId} marked as ready!`);
-        }
-    }
-    
-    // Show order details
-    showOrderDetails(orderId) {
-        const order = this.orders.find(o => o.id === orderId);
+    // View order details
+    viewOrderDetails(orderId) {
+        const order = this.orders.find(o => o.id == orderId) || 
+                     this.completedOrders.find(o => o.id == orderId);
+        
         if (!order) return;
         
         // Populate modal
         document.getElementById('modal-order-no').textContent = order.id;
-        document.getElementById('modal-customer').textContent = order.customerName || 'Walk-in Customer';
-        document.getElementById('modal-phone').textContent = order.customerNumber || 'N/A';
+        document.getElementById('modal-customer').textContent = order.customerName || 'Walk-in';
+        document.getElementById('modal-phone').textContent = order.customerPhone || 'N/A';
         document.getElementById('modal-order-time').textContent = new Date(order.orderTime).toLocaleString();
         document.getElementById('modal-order-type').textContent = order.orderType;
-        document.getElementById('modal-notes').textContent = order.notes || 'No notes';
         
         // Populate items
-        const tbody = document.getElementById('modal-items-body');
-        tbody.innerHTML = '';
-        
+        let itemsHtml = '';
         order.items.forEach(item => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>${this.settings.currency}${item.price}</td>
-                <td>${this.settings.currency}${item.total}</td>
+            itemsHtml += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.quantity}</td>
+                    <td>₹${item.price}</td>
+                    <td>₹${item.total}</td>
+                </tr>
             `;
-            tbody.appendChild(row);
         });
         
-        document.getElementById('modal-subtotal').textContent = order.subtotal.toFixed(2);
-        document.getElementById('modal-tax').textContent = order.tax.toFixed(2);
+        document.getElementById('modal-items-body').innerHTML = itemsHtml;
         document.getElementById('modal-total').textContent = order.total.toFixed(2);
         
         // Set order id on complete button
-        document.getElementById('complete-order-btn').setAttribute('data-order-id', order.id);
+        const completeBtn = document.getElementById('complete-order-btn');
+        completeBtn.setAttribute('data-order-id', order.id);
+        
+        // Show/hide complete button based on order status
+        if (order.status === 'completed') {
+            completeBtn.style.display = 'none';
+        } else {
+            completeBtn.style.display = 'inline-block';
+        }
         
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
         modal.show();
     }
     
-    // Complete order from modal
-    completeOrder() {
-        const orderId = parseInt(document.getElementById('complete-order-btn').getAttribute('data-order-id'));
-        this.completeOrderDirectly(orderId);
-        
-        // Hide modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
-        modal.hide();
-    }
-    
-    // Complete order directly
-    completeOrderDirectly(orderId) {
-        const orderIndex = this.orders.findIndex(o => o.id === orderId);
+    // Complete order
+    completeOrder(orderId) {
+        const orderIndex = this.orders.findIndex(o => o.id == orderId);
         if (orderIndex === -1) return;
         
-        // Remove from orders array
+        // Remove from ongoing orders
         const [completedOrder] = this.orders.splice(orderIndex, 1);
         
-        // Add completion time
-        completedOrder.completedTime = new Date().toISOString();
+        // Update order details
         completedOrder.status = 'completed';
-        completedOrder.completedBy = this.currentUser ? this.currentUser.username : 'System';
+        completedOrder.completedTime = new Date().toISOString();
+        completedOrder.completedBy = 'System';
         
         // Add to completed orders
         this.completedOrders.unshift(completedOrder);
         
         // Save data
-        this.saveData('orders', this.orders);
-        this.saveData('completedOrders', this.completedOrders);
+        this.saveAllData();
         
         // Update UI
         this.renderOngoingOrders();
         this.renderCompletedOrders();
         this.updateBadges();
-        this.updateLiveStats();
+        this.updateStats();
         
-        // Show confirmation
-        toastr.success(`Order #${orderId} marked as completed!`);
-        this.playNotification('success');
+        // Show success
+        this.showNotification(`Order #${orderId} completed!`, 'success');
         
-        // Add recent activity
-        this.addRecentActivity(`Order #${orderId} completed`, 'success');
-    }
-    
-    // Edit order
-    editOrder() {
-        const orderId = parseInt(document.getElementById('complete-order-btn').getAttribute('data-order-id'));
-        toastr.info('Edit functionality coming soon!');
+        // Close modal if open
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+        if (modal) modal.hide();
     }
     
     // Delete order
     deleteOrder(orderId) {
-        if (!confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+        if (!confirm('Are you sure you want to delete this order?')) {
             return;
         }
         
-        const orderIndex = this.orders.findIndex(o => o.id === orderId);
+        const orderIndex = this.orders.findIndex(o => o.id == orderId);
         if (orderIndex === -1) return;
         
         // Restore stock if needed
         const order = this.orders[orderIndex];
         this.restoreStock(order.items);
         
-        // Remove from orders array
+        // Remove order
         this.orders.splice(orderIndex, 1);
         
         // Save data
-        this.saveData('orders', this.orders);
+        this.saveAllData();
         
         // Update UI
         this.renderOngoingOrders();
         this.updateBadges();
         
-        // Show confirmation
-        toastr.success(`Order #${orderId} has been deleted!`);
-        this.addRecentActivity(`Order #${orderId} deleted`, 'error');
+        this.showNotification(`Order #${orderId} deleted`, 'success');
     }
     
     // Restore stock
@@ -1390,115 +929,9 @@ class RestaurantOrderSystem {
         });
     }
     
-    // Filter orders
-    filterOrders(status) {
-        // This is a simplified implementation
-        // In a real app, you would filter the displayed orders
-        toastr.info(`Showing ${status} orders`);
-    }
-    
-    // Print kitchen orders
-    printKitchenOrders() {
-        const printContent = this.generateKitchenPrintContent();
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(printContent);
-        printWindow.document.close();
-        printWindow.print();
-    }
-    
-    // Generate kitchen print content
-    generateKitchenPrintContent() {
-        let content = `
-            <html>
-            <head>
-                <title>Kitchen Orders</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1 { color: #333; }
-                    .order { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; }
-                    .order-header { background: #f0f0f0; padding: 10px; margin-bottom: 10px; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background: #f2f2f2; }
-                </style>
-            </head>
-            <body>
-                <h1>Kitchen Orders - ${new Date().toLocaleString()}</h1>
-        `;
-        
-        this.orders.forEach(order => {
-            content += `
-                <div class="order">
-                    <div class="order-header">
-                        <strong>Order #${order.id}</strong> | 
-                        Customer: ${order.customerName || 'Walk-in'} | 
-                        Time: ${new Date(order.orderTime).toLocaleTimeString()}
-                    </div>
-                    <table>
-                        <tr>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>Notes</th>
-                        </tr>
-            `;
-            
-            order.items.forEach(item => {
-                content += `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td>${item.quantity}</td>
-                        <td>${item.notes || ''}</td>
-                    </tr>
-                `;
-            });
-            
-            content += `
-                    </table>
-                    <p><strong>Order Notes:</strong> ${order.notes || 'None'}</p>
-                </div>
-            `;
-        });
-        
-        content += `
-            </body>
-            </html>
-        `;
-        
-        return content;
-    }
-    
-    // Voice announce
-    voiceAnnounce() {
-        if ('speechSynthesis' in window) {
-            const speech = new SpeechSynthesisUtterance();
-            speech.text = `There are ${this.orders.length} orders in the kitchen. ${this.orders.filter(o => o.status === 'ready').length} orders are ready.`;
-            speech.rate = 1;
-            speech.pitch = 1;
-            speech.volume = 1;
-            window.speechSynthesis.speak(speech);
-        } else {
-            toastr.warning('Speech synthesis not supported in this browser.');
-        }
-    }
-    
-    // Add recent activity
-    addRecentActivity(message, type = 'info') {
-        const container = document.getElementById('recent-activity');
-        const activityItem = document.createElement('div');
-        activityItem.className = 'list-group-item';
-        activityItem.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-                <span>${message}</span>
-                <span class="badge bg-${type}">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-            </div>
-        `;
-        
-        container.insertBefore(activityItem, container.firstChild);
-        
-        // Keep only last 5 activities
-        while (container.children.length > 5) {
-            container.removeChild(container.lastChild);
-        }
+    // Print all orders
+    printAllOrders() {
+        window.print();
     }
     
     // Render completed orders
@@ -1507,7 +940,7 @@ class RestaurantOrderSystem {
         const emptyState = document.getElementById('no-completed-orders');
         const dateFilter = document.getElementById('date-filter').value;
         
-        // Filter orders by date
+        // Filter orders
         let filteredOrders = this.completedOrders;
         const now = new Date();
         
@@ -1542,92 +975,47 @@ class RestaurantOrderSystem {
         if (filteredOrders.length === 0) {
             tbody.innerHTML = '';
             emptyState.style.display = 'block';
-            this.updateSalesDashboard(filteredOrders);
+            this.updateSalesSummary([]);
             return;
         }
         
         emptyState.style.display = 'none';
-        tbody.innerHTML = '';
+        let html = '';
         
         filteredOrders.forEach(order => {
             const orderTime = new Date(order.orderTime);
             const completedTime = new Date(order.completedTime);
-            
-            // Get items count
             const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
             
-            // Order type badge
-            const typeBadgeClass = `order-type-${order.orderType}`;
-            const typeText = order.orderType.charAt(0).toUpperCase() + order.orderType.slice(1);
-            
-            // Payment method
-            const paymentMap = {
-                'cash': 'Cash',
-                'card': 'Card',
-                'upi': 'UPI',
-                'online': 'Online'
-            };
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><strong>#${order.id}</strong></td>
-                <td>${orderTime.toLocaleString()}</td>
-                <td>${order.customerName || 'Walk-in'}</td>
-                <td>${itemsCount} items</td>
-                <td><span class="order-type-badge ${typeBadgeClass}">${typeText}</span></td>
-                <td>${paymentMap[order.paymentMethod] || order.paymentMethod}</td>
-                <td>${this.settings.currency}${order.total.toFixed(2)}</td>
-                <td>${completedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+            html += `
+                <tr>
+                    <td><strong>#${order.id}</strong></td>
+                    <td>${orderTime.toLocaleDateString()}</td>
+                    <td>${order.customerName || 'Walk-in'}</td>
+                    <td>${itemsCount} items</td>
+                    <td>₹${order.total.toFixed(2)}</td>
+                    <td>${completedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                </tr>
             `;
-            
-            tbody.appendChild(row);
         });
         
-        // Update sales dashboard
-        this.updateSalesDashboard(filteredOrders);
+        tbody.innerHTML = html;
+        
+        // Update sales summary
+        this.updateSalesSummary(filteredOrders);
     }
     
-    // Update sales dashboard
-    updateSalesDashboard(orders) {
-        if (orders.length === 0) {
-            // Reset all displays
-            document.getElementById('today-total-revenue').textContent = `${this.settings.currency}0`;
-            document.getElementById('today-orders-count').textContent = '0';
-            document.getElementById('today-avg-order').textContent = `${this.settings.currency}0`;
-            document.getElementById('today-items-sold').textContent = '0';
-            return;
-        }
-        
-        // Calculate statistics
+    // Update sales summary
+    updateSalesSummary(orders) {
+        // Calculate totals
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
         const totalOrders = orders.length;
-        const avgOrderValue = totalRevenue / totalOrders;
-        const totalItems = orders.reduce((sum, order) => 
-            sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
         
-        // Payment method breakdown
-        const paymentMethods = {};
-        orders.forEach(order => {
-            paymentMethods[order.paymentMethod] = (paymentMethods[order.paymentMethod] || 0) + 1;
-        });
+        document.getElementById('total-revenue').textContent = `₹${totalRevenue.toFixed(2)}`;
+        document.getElementById('total-orders').textContent = totalOrders;
         
-        // Update displays
-        document.getElementById('today-total-revenue').textContent = `${this.settings.currency}${totalRevenue.toFixed(2)}`;
-        document.getElementById('today-orders-count').textContent = totalOrders;
-        document.getElementById('today-avg-order').textContent = `${this.settings.currency}${avgOrderValue.toFixed(2)}`;
-        document.getElementById('today-items-sold').textContent = totalItems;
-        
-        // Update top items
-        this.updateTopItems(orders);
-        
-        // Update payment chart
-        this.updatePaymentChart(paymentMethods);
-    }
-    
-    // Update top items
-    updateTopItems(orders) {
+        // Calculate item-wise sales
         const itemSales = {};
-        
         orders.forEach(order => {
             order.items.forEach(item => {
                 if (!itemSales[item.name]) {
@@ -1641,145 +1029,488 @@ class RestaurantOrderSystem {
             });
         });
         
-        // Sort by revenue (highest first)
+        // Update top items table
         const topItems = Object.entries(itemSales)
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 5);
         
-        const tbody = document.getElementById('top-items-body');
-        tbody.innerHTML = '';
-        
-        topItems.forEach(([itemName, data], index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}. ${itemName}</td>
-                <td>${data.quantity}</td>
-                <td>${this.settings.currency}${data.revenue.toFixed(2)}</td>
+        let topItemsHtml = '';
+        topItems.forEach(([itemName, data]) => {
+            topItemsHtml += `
+                <tr>
+                    <td>${itemName}</td>
+                    <td>${data.quantity}</td>
+                    <td>₹${data.revenue.toFixed(2)}</td>
+                </tr>
             `;
-            tbody.appendChild(row);
         });
+        
+        document.getElementById('top-items-body').innerHTML = topItemsHtml || 
+            '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
+        
+        // Update sales chart
+        this.updateSalesChart(topItems);
     }
     
-    // Update payment chart
-    updatePaymentChart(paymentMethods) {
-        const ctx = document.getElementById('paymentChart').getContext('2d');
+    // Update sales chart
+    updateSalesChart(topItems) {
+        const ctx = document.getElementById('salesChart').getContext('2d');
         
         // Destroy existing chart
-        if (this.paymentChart) {
-            this.paymentChart.destroy();
+        if (this.salesChart) {
+            this.salesChart.destroy();
         }
         
-        const labels = Object.keys(paymentMethods).map(method => {
-            const methodMap = {
-                'cash': 'Cash',
-                'card': 'Card',
-                'upi': 'UPI',
-                'online': 'Online'
-            };
-            return methodMap[method] || method;
-        });
+        // Prepare data
+        const labels = topItems.map(item => item[0]);
+        const quantities = topItems.map(item => item[1].quantity);
+        const revenues = topItems.map(item => item[1].revenue);
         
-        const data = Object.values(paymentMethods);
-        const colors = ['#ff6b35', '#28a745', '#007bff', '#ffc107'];
-        
-        this.paymentChart = new Chart(ctx, {
-            type: 'doughnut',
+        // Create chart
+        this.salesChart = new Chart(ctx, {
+            type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    data: data,
-                    backgroundColor: colors,
-                    borderWidth: 1
-                }]
+                datasets: [
+                    {
+                        label: 'Quantity Sold',
+                        data: quantities,
+                        backgroundColor: 'rgba(255, 107, 53, 0.7)',
+                        borderColor: 'rgba(255, 107, 53, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Revenue (₹)',
+                        data: revenues,
+                        backgroundColor: 'rgba(41, 128, 185, 0.7)',
+                        borderColor: 'rgba(41, 128, 185, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1',
+                        type: 'line'
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Quantity'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Revenue (₹)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                },
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'top'
                     }
                 }
             }
         });
     }
     
-    // Export CSV
-    exportCSV() {
-        if (this.completedOrders.length === 0) {
-            toastr.error('No data to export!');
-            return;
-        }
-        
-        // Create CSV content
-        let csv = 'Order ID,Date,Time,Customer,Items,Subtotal,Tax,Total,Payment Method,Order Type\n';
-        
-        this.completedOrders.forEach(order => {
-            const orderTime = new Date(order.orderTime);
-            const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
-            
-            csv += `${order.id},`;
-            csv += `${orderTime.toLocaleDateString()},`;
-            csv += `${orderTime.toLocaleTimeString()},`;
-            csv += `"${order.customerName || 'Walk-in'}",`;
-            csv += `${itemsCount},`;
-            csv += `${order.subtotal},`;
-            csv += `${order.tax},`;
-            csv += `${order.total},`;
-            csv += `${order.paymentMethod},`;
-            csv += `${order.orderType}\n`;
-        });
-        
-        // Create download link
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        toastr.success('CSV exported successfully!');
-    }
-    
     // Download PDF report
     downloadPDFReport() {
         if (this.completedOrders.length === 0) {
-            toastr.error('No completed orders to generate report!');
+            this.showNotification('No completed orders to generate report', 'error');
             return;
         }
         
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
+        const doc = new jsPDF();
         
-        // Restaurant Info
+        // Add title
         doc.setFontSize(20);
         doc.setTextColor(40, 40, 40);
-        doc.text(this.settings.restaurantName, 105, 15, { align: 'center' });
+        doc.text('Restaurant Sales Report', 105, 20, { align: 'center' });
         
+        // Add date
         doc.setFontSize(12);
         doc.setTextColor(100, 100, 100);
-        doc.text('Sales Report', 105, 25, { align: 'center' });
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
         
-        doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleString()}`, 105, 32, { align: 'center' });
+        // Add summary
+        const totalRevenue = this.completedOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalOrders = this.completedOrders.length;
         
-        // Summary Section
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
         doc.text('Summary', 20, 45);
         
         doc.setFontSize(11);
-        
-        // Calculate statistics
-        const totalRevenue = this.completedOrders.reduce((sum, order) => sum + order.total, 0);
-        const totalOrders = this.completedOrders.length;
-        const avgOrderValue = totalRevenue / totalOrders;
-        const totalItems = this.completedOrders.reduce((sum, order) => 
-            sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
-        
         doc.text(`Total Orders: ${totalOrders}`, 20, 55);
-        doc.text(`Total Revenue: ${this.settings.currency}${totalRevenue.toFixed(2)}`, 20, 62);
-        doc.text(`Average Order Value: ${this.settings.currency}
+        doc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`, 20, 62);
+        
+        // Calculate item-wise sales
+        const itemSales = {};
+        this.completedOrders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemSales[item.name]) {
+                    itemSales[item.name] = {
+                        quantity: 0,
+                        revenue: 0
+                    };
+                }
+                itemSales[item.name].quantity += item.quantity;
+                itemSales[item.name].revenue += item.total;
+            });
+        });
+        
+        // Prepare table data
+        const tableData = Object.entries(itemSales).map(([itemName, data], index) => [
+            index + 1,
+            itemName,
+            data.quantity,
+            `₹${data.revenue.toFixed(2)}`
+        ]);
+        
+        // Add item-wise sales table
+        doc.autoTable({
+            head: [['#', 'Item Name', 'Quantity', 'Revenue']],
+            body: tableData,
+            startY: 70,
+            theme: 'grid',
+            headStyles: { fillColor: [255, 107, 53] }
+        });
+        
+        // Save PDF
+        doc.save(`sales-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        this.showNotification('PDF report downloaded!', 'success');
+    }
+    
+    // Clear completed orders
+    clearCompletedOrders() {
+        if (this.completedOrders.length === 0) {
+            this.showNotification('No completed orders to clear', 'error');
+            return;
+        }
+        
+        if (confirm('Are you sure you want to clear all completed orders? This action cannot be undone.')) {
+            this.completedOrders = [];
+            this.saveData('completedOrders', this.completedOrders);
+            this.renderCompletedOrders();
+            this.updateBadges();
+            this.showNotification('All completed orders cleared', 'success');
+        }
+    }
+    
+    // Render menu management
+    renderMenuManagement() {
+        const tbody = document.getElementById('menu-management-body');
+        const categorySelect = document.getElementById('item-category');
+        
+        // Update category dropdown
+        categorySelect.innerHTML = '<option value="">Select Category</option>';
+        this.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+        
+        // Group items by category
+        const categories = {};
+        this.menu.forEach(item => {
+            if (!categories[item.category]) {
+                categories[item.category] = [];
+            }
+            categories[item.category].push(item);
+        });
+        
+        let html = '';
+        
+        // Render each category
+        this.categories.forEach(category => {
+            // Category header
+            html += `
+                <tr class="table-secondary">
+                    <td colspan="5" class="fw-bold">
+                        ${category}
+                        <button class="btn btn-sm btn-outline-danger float-end delete-category-btn" 
+                                data-category="${category}">
+                            <i class="fas fa-trash"></i> Delete Category
+                        </button>
+                    </td>
+                </tr>
+            `;
+            
+            // Category items
+            const items = categories[category] || [];
+            items.forEach((item, index) => {
+                html += `
+                    <tr>
+                        <td></td>
+                        <td>${item.name}</td>
+                        <td>₹${item.price}</td>
+                        <td>${item.stock}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary edit-item-btn" 
+                                    data-item-id="${item.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-item-btn" 
+                                    data-item-id="${item.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+        
+        tbody.innerHTML = html;
+        
+        // Add event listeners
+        document.querySelectorAll('.edit-item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemId = parseInt(e.currentTarget.getAttribute('data-item-id'));
+                this.editMenuItem(itemId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-item-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemId = parseInt(e.currentTarget.getAttribute('data-item-id'));
+                this.deleteMenuItem(itemId);
+            });
+        });
+        
+        document.querySelectorAll('.delete-category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const category = e.currentTarget.getAttribute('data-category');
+                this.deleteCategory(category);
+            });
+        });
+    }
+    
+    // Edit menu item
+    editMenuItem(itemId) {
+        const item = this.menu.find(i => i.id === itemId);
+        if (!item) return;
+        
+        // Populate form
+        document.getElementById('item-category').value = item.category;
+        document.getElementById('item-name').value = item.name;
+        document.getElementById('item-price').value = item.price;
+        document.getElementById('item-cost').value = item.cost || '';
+        document.getElementById('item-stock').value = item.stock || 0;
+        document.getElementById('item-status').value = item.status || 'available';
+        document.getElementById('edit-item-id').value = item.id;
+        
+        // Scroll to form
+        document.getElementById('item-name').focus();
+    }
+    
+    // Save menu item
+    saveMenuItem() {
+        const category = document.getElementById('item-category').value;
+        const name = document.getElementById('item-name').value.trim();
+        const price = parseInt(document.getElementById('item-price').value);
+        const cost = parseInt(document.getElementById('item-cost').value) || 0;
+        const stock = parseInt(document.getElementById('item-stock').value) || 0;
+        const status = document.getElementById('item-status').value;
+        const editItemId = document.getElementById('edit-item-id').value;
+        
+        if (!category || !name || !price || price <= 0) {
+            this.showNotification('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        if (editItemId) {
+            // Update existing item
+            const itemId = parseInt(editItemId);
+            const itemIndex = this.menu.findIndex(i => i.id === itemId);
+            
+            if (itemIndex !== -1) {
+                this.menu[itemIndex].category = category;
+                this.menu[itemIndex].name = name;
+                this.menu[itemIndex].price = price;
+                this.menu[itemIndex].cost = cost;
+                this.menu[itemIndex].stock = stock;
+                this.menu[itemIndex].status = status;
+            }
+        } else {
+            // Add new item
+            const newId = Math.max(...this.menu.map(i => i.id)) + 1;
+            this.menu.push({
+                id: newId,
+                category: category,
+                name: name,
+                price: price,
+                cost: cost,
+                stock: stock,
+                status: status
+            });
+        }
+        
+        // Save data
+        this.saveData('menu', this.menu);
+        
+        // Reset form
+        this.cancelEditMenuItem();
+        
+        // Update UI
+        this.renderMenu();
+        this.renderMenuManagement();
+        
+        this.showNotification('Menu item saved successfully!', 'success');
+    }
+    
+    // Cancel edit menu item
+    cancelEditMenuItem() {
+        document.getElementById('menu-item-form').reset();
+        document.getElementById('edit-item-id').value = '';
+        document.getElementById('item-status').value = 'available';
+    }
+    
+    // Delete menu item
+    deleteMenuItem(itemId) {
+        if (!confirm('Are you sure you want to delete this menu item?')) {
+            return;
+        }
+        
+        const itemIndex = this.menu.findIndex(i => i.id === itemId);
+        if (itemIndex !== -1) {
+            this.menu.splice(itemIndex, 1);
+            this.saveData('menu', this.menu);
+            
+            this.renderMenu();
+            this.renderMenuManagement();
+            
+            this.showNotification('Menu item deleted', 'success');
+        }
+    }
+    
+    // Show new category input
+    showNewCategoryInput() {
+        document.getElementById('new-category-input').style.display = 'block';
+        document.getElementById('new-category-name').focus();
+    }
+    
+    // Hide new category input
+    hideNewCategoryInput() {
+        document.getElementById('new-category-input').style.display = 'none';
+        document.getElementById('new-category-name').value = '';
+    }
+    
+    // Save new category
+    saveNewCategory() {
+        const categoryName = document.getElementById('new-category-name').value.trim().toUpperCase();
+        
+        if (!categoryName) {
+            this.showNotification('Please enter a category name', 'error');
+            return;
+        }
+        
+        if (this.categories.includes(categoryName)) {
+            this.showNotification('Category already exists', 'error');
+            return;
+        }
+        
+        // Add category
+        this.categories.push(categoryName);
+        this.saveData('categories', this.categories);
+        
+        // Update UI
+        this.hideNewCategoryInput();
+        this.renderMenuManagement();
+        
+        // Set as selected in dropdown
+        document.getElementById('item-category').value = categoryName;
+        
+        this.showNotification(`Category "${categoryName}" added`, 'success');
+    }
+    
+    // Delete category
+    deleteCategory(category) {
+        if (!confirm(`Delete category "${category}"? This will also delete all items in this category.`)) {
+            return;
+        }
+        
+        // Remove items in this category
+        this.menu = this.menu.filter(item => item.category !== category);
+        
+        // Remove category
+        this.categories = this.categories.filter(c => c !== category);
+        
+        // Save data
+        this.saveData('menu', this.menu);
+        this.saveData('categories', this.categories);
+        
+        // Update UI
+        this.renderMenu();
+        this.renderMenuManagement();
+        
+        this.showNotification(`Category "${category}" deleted`, 'success');
+    }
+    
+    // Show notification
+    showNotification(message, type = 'info') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        notification.style.cssText = `
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 3000);
+    }
+}
+
+// Initialize the system when page loads
+let restaurantSystem;
+
+document.addEventListener('DOMContentLoaded', () => {
+    restaurantSystem = new RestaurantOrderSystem();
+    
+    // Make system globally available for inline event handlers
+    window.restaurantSystem = restaurantSystem;
+    
+    // Handle back button/forward button
+    window.addEventListener('popstate', () => {
+        // Handle tab switching based on URL hash if needed
+    });
+    
+    // Prevent form submission on enter
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
+    });
+});

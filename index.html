@@ -1,98 +1,666 @@
-<!-- Add these meta tags in the head section -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#ff6b35">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Restaurant Order System</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- App Icon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍽️</text></svg>">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-utensils me-2"></i>
+                <span class="brand-name">Restaurant POS</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-tab="take-order">
+                            <i class="fas fa-plus-circle me-1"></i>
+                            <span class="nav-text">New Order</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="ongoing-orders">
+                            <i class="fas fa-clock me-1"></i>
+                            <span class="nav-text">Ongoing</span>
+                            <span class="badge bg-warning ms-1" id="ongoing-badge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="completed-orders">
+                            <i class="fas fa-check-circle me-1"></i>
+                            <span class="nav-text">Completed</span>
+                            <span class="badge bg-success ms-1" id="completed-badge">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="menu-management">
+                            <i class="fas fa-edit me-1"></i>
+                            <span class="nav-text">Menu</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-<!-- Add a mobile action menu -->
-<div id="mobile-action-menu" class="d-block d-md-none" style="position: fixed; bottom: 0; left: 0; right: 0; background: white; z-index: 1000; padding: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1);">
-    <div class="row g-2">
-        <div class="col-4">
-            <button class="btn btn-primary w-100" onclick="restaurantSystem.switchTab('take-order')">
-                <i class="fas fa-plus"></i> Order
-            </button>
+    <!-- Mobile Bottom Navigation -->
+    <div class="mobile-bottom-nav d-block d-lg-none">
+        <div class="mobile-nav-item active" data-tab="take-order">
+            <i class="fas fa-plus-circle"></i>
+            <span>New Order</span>
         </div>
-        <div class="col-4">
-            <button class="btn btn-warning w-100" onclick="restaurantSystem.switchTab('ongoing-orders')">
-                <i class="fas fa-clock"></i>
-                <span class="badge bg-danger position-absolute top-0 end-0" id="mobile-ongoing-badge">0</span>
-            </button>
+        <div class="mobile-nav-item" data-tab="ongoing-orders">
+            <i class="fas fa-clock"></i>
+            <span>Ongoing</span>
+            <span class="mobile-badge" id="mobile-ongoing-badge">0</span>
         </div>
-        <div class="col-4">
-            <button class="btn btn-success w-100" onclick="restaurantSystem.switchTab('completed-orders')">
-                <i class="fas fa-check"></i>
-            </button>
+        <div class="mobile-nav-item" data-tab="completed-orders">
+            <i class="fas fa-check-circle"></i>
+            <span>Completed</span>
+            <span class="mobile-badge" id="mobile-completed-badge">0</span>
+        </div>
+        <div class="mobile-nav-item" data-tab="menu-management">
+            <i class="fas fa-edit"></i>
+            <span>Menu</span>
         </div>
     </div>
-</div>
 
-<!-- Update the main container to accommodate mobile action menu -->
-<div class="container-fluid main-container has-action-buttons">
-    <!-- Your existing content -->
-</div>
+    <!-- Main Content -->
+    <div class="container-fluid main-content">
+        <!-- Take Order Tab -->
+        <div id="take-order" class="tab-content active">
+            <div class="row g-3">
+                <!-- Left Column -->
+                <div class="col-lg-8">
+                    <!-- Customer Info Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-user me-2"></i>Customer Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Customer Name (Optional)</label>
+                                    <input type="text" class="form-control" id="customer-name" placeholder="Enter name">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number (Optional)</label>
+                                    <input type="tel" class="form-control" id="customer-phone" placeholder="Enter phone">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Order Type</label>
+                                    <select class="form-select" id="order-type">
+                                        <option value="dine-in">Dine In</option>
+                                        <option value="takeaway">Takeaway</option>
+                                        <option value="delivery">Delivery</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Payment Method</label>
+                                    <select class="form-select" id="payment-method">
+                                        <option value="cash">Cash</option>
+                                        <option value="card">Card</option>
+                                        <option value="upi">UPI</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-<!-- Add this script to handle mobile-specific features -->
-<script>
-// Handle iOS keyboard issues
-document.addEventListener('DOMContentLoaded', function() {
-    // Prevent zoom on input focus in iOS
-    let viewport = document.querySelector("meta[name=viewport]");
-    
-    function preventZoom() {
-        viewport.setAttribute("content", "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no");
-    }
-    
-    function allowZoom() {
-        viewport.setAttribute("content", "width=device-width, initial-scale=1.0");
-    }
-    
-    document.addEventListener("focusin", function(e) {
-        if (e.target.matches("input, select, textarea")) {
-            preventZoom();
-        }
-    });
-    
-    document.addEventListener("focusout", function(e) {
-        if (e.target.matches("input, select, textarea")) {
-            allowZoom();
-        }
-    });
-    
-    // Handle iOS swipe gestures
-    let startX, startY;
-    
-    document.addEventListener('touchstart', function(e) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-    }, {passive: true});
-    
-    document.addEventListener('touchmove', function(e) {
-        if (!startX || !startY) return;
-        
-        const diffX = startX - e.touches[0].clientX;
-        const diffY = startY - e.touches[0].clientY;
-        
-        // Horizontal swipe for tab navigation
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-            // Implement tab switching on swipe
-            if (diffX > 0) {
-                // Swipe left - next tab
-                console.log('Swipe left');
-            } else {
-                // Swipe right - previous tab
-                console.log('Swipe right');
-            }
-            startX = null;
-            startY = null;
-        }
-    }, {passive: true});
-});
+                    <!-- Menu Items Card -->
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-utensils me-2"></i>Menu Items
+                            </h5>
+                            <div class="search-box">
+                                <input type="text" class="form-control form-control-sm" id="menu-search" placeholder="Search items...">
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="menu-items-container">
+                                <!-- Menu items will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
 
-// Update mobile badges
-function updateMobileBadges() {
-    if (restaurantSystem) {
-        document.getElementById('mobile-ongoing-badge').textContent = restaurantSystem.orders.length;
-    }
-}
-</script>
+                    <!-- Selected Items Card -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-shopping-cart me-2"></i>Selected Items
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="selected-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                            <th class="text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="selected-items-body">
+                                        <tr>
+                                            <td colspan="5" class="text-center text-muted py-4">
+                                                No items selected
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-secondary">
+                                            <td colspan="2"></td>
+                                            <td><strong>Subtotal:</strong></td>
+                                            <td><strong id="subtotal">₹0</strong></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="2"></td>
+                                            <td><strong>Tax (5%):</strong></td>
+                                            <td><strong id="tax-amount">₹0</strong></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr class="table-success">
+                                            <td colspan="2"></td>
+                                            <td><strong>Total:</strong></td>
+                                            <td><strong id="grand-total">₹0</strong></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-3 g-2">
+                        <div class="col-6 col-md-3">
+                            <button class="btn btn-outline-secondary w-100" id="clear-order-btn">
+                                <i class="fas fa-times me-1"></i> Clear
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button class="btn btn-warning w-100" id="save-template-btn">
+                                <i class="fas fa-save me-1"></i> Save Template
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button class="btn btn-info w-100" id="hold-order-btn">
+                                <i class="fas fa-pause me-1"></i> Hold Order
+                            </button>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <button class="btn btn-success w-100" id="place-order-btn">
+                                <i class="fas fa-check me-1"></i> Place Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="col-lg-4">
+                    <!-- Order Summary Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-receipt me-2"></i>Order Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="order-summary">
+                                <div class="text-center mb-3">
+                                    <div class="order-number">Order #<span id="next-order-number">1001</span></div>
+                                    <small class="text-muted">Next Order Number</small>
+                                </div>
+                                
+                                <div class="summary-details mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Customer:</span>
+                                        <span id="summary-customer">Not specified</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <span>Order Type:</span>
+                                        <span id="summary-type">Dine In</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Payment:</span>
+                                        <span id="summary-payment">Cash</span>
+                                    </div>
+                                </div>
+
+                                <div class="summary-items" id="summary-items">
+                                    <!-- Items will be listed here -->
+                                </div>
+
+                                <hr>
+
+                                <div class="summary-totals">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Subtotal:</span>
+                                        <span id="summary-subtotal">₹0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Tax (5%):</span>
+                                        <span id="summary-tax">₹0</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between total-row">
+                                        <strong>Grand Total:</strong>
+                                        <strong id="summary-total">₹0</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats Card -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Today's Stats
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-value" id="today-orders">0</div>
+                                    <div class="stat-label">Orders</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="today-revenue">₹0</div>
+                                    <div class="stat-label">Revenue</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value" id="today-items">0</div>
+                                    <div class="stat-label">Items Sold</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions Card -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100" id="quick-drinks">
+                                        <i class="fas fa-wine-glass me-1"></i> Drinks
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-success w-100" id="quick-desserts">
+                                        <i class="fas fa-ice-cream me-1"></i> Desserts
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-warning w-100" id="quick-appetizers">
+                                        <i class="fas fa-apple-alt me-1"></i> Appetizers
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-info w-100" id="quick-wraps">
+                                        <i class="fas fa-bread-slice me-1"></i> Wraps
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ongoing Orders Tab -->
+        <div id="ongoing-orders" class="tab-content">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2"></i>Ongoing Orders
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" id="refresh-orders-btn">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" id="print-all-btn">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Time</th>
+                                    <th>Customer</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ongoing-orders-body">
+                                <!-- Orders will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="no-ongoing-orders" class="text-center py-5">
+                        <i class="fas fa-clipboard-list fa-3x mb-3 text-muted"></i>
+                        <h5>No Ongoing Orders</h5>
+                        <p class="text-muted">Start taking orders to see them here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Orders Tab -->
+        <div id="completed-orders" class="tab-content">
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-check-circle me-2"></i>Completed Orders
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="date-filter" style="width: 150px;">
+                                    <option value="today">Today</option>
+                                    <option value="yesterday">Yesterday</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Date</th>
+                                            <th>Customer</th>
+                                            <th>Items</th>
+                                            <th>Total</th>
+                                            <th>Completed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="completed-orders-body">
+                                        <!-- Completed orders will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="no-completed-orders" class="text-center py-5">
+                                <i class="fas fa-check fa-3x mb-3 text-muted"></i>
+                                <h5>No Completed Orders</h5>
+                                <p class="text-muted">Complete some orders to see them here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Sales Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="summary-box mb-4">
+                                <h6>Total Revenue</h6>
+                                <h2 class="text-success" id="total-revenue">₹0</h2>
+                                <p class="text-muted small">From <span id="total-orders">0</span> orders</p>
+                            </div>
+
+                            <div class="summary-box mb-4">
+                                <h6>Top Selling Items</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Qty</th>
+                                                <th>Revenue</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="top-items-body">
+                                            <!-- Top items will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="summary-box">
+                                <h6>Sales Chart</h6>
+                                <canvas id="salesChart" height="200"></canvas>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-3">
+                                <button class="btn btn-primary" id="download-pdf-btn">
+                                    <i class="fas fa-download me-1"></i> Download PDF Report
+                                </button>
+                                <button class="btn btn-outline-danger" id="clear-completed-btn">
+                                    <i class="fas fa-trash me-1"></i> Clear All Completed
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Management Tab -->
+        <div id="menu-management" class="tab-content">
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-edit me-2"></i>Menu Management
+                            </h5>
+                            <button class="btn btn-sm btn-primary" id="add-category-btn">
+                                <i class="fas fa-plus me-1"></i> Add Category
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Item Name</th>
+                                            <th>Price</th>
+                                            <th>Stock</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="menu-management-body">
+                                        <!-- Menu items will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>Add/Edit Menu Item
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="menu-item-form">
+                                <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <div class="input-group">
+                                        <select class="form-select" id="item-category" required>
+                                            <option value="">Select Category</option>
+                                        </select>
+                                        <button class="btn btn-outline-secondary" type="button" id="new-category-btn">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2" id="new-category-input" style="display: none;">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="new-category-name" placeholder="New category">
+                                            <button class="btn btn-success" type="button" id="save-category-btn">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-secondary" type="button" id="cancel-category-btn">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Item Name</label>
+                                    <input type="text" class="form-control" id="item-name" required>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label">Price (₹)</label>
+                                        <input type="number" class="form-control" id="item-price" min="1" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Cost (₹)</label>
+                                        <input type="number" class="form-control" id="item-cost" min="0">
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label">Stock</label>
+                                        <input type="number" class="form-control" id="item-stock" min="0" value="0">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" id="item-status">
+                                            <option value="available">Available</option>
+                                            <option value="unavailable">Unavailable</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <input type="hidden" id="edit-item-id">
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save me-1"></i> Save Item
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit-btn">
+                                        <i class="fas fa-times me-1"></i> Cancel Edit
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="alert alert-info mt-3">
+                                <h6><i class="fas fa-lightbulb me-2"></i>Tips</h6>
+                                <ul class="mb-0 small">
+                                    <li>Click on any item to edit it</li>
+                                    <li>Add new categories using the + button</li>
+                                    <li>Set stock to 0 to disable ordering</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div class="modal fade" id="orderDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Order Details - #<span id="modal-order-no"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> <span id="modal-customer"></span></p>
+                            <p><strong>Phone:</strong> <span id="modal-phone"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Order Time:</strong> <span id="modal-order-time"></span></p>
+                            <p><strong>Order Type:</strong> <span id="modal-order-type"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-items-body">
+                                <!-- Items will be loaded here -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-success">
+                                    <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                    <td><strong>₹<span id="modal-total"></span></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="complete-order-btn" data-order-id="">Complete Order</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+</html>

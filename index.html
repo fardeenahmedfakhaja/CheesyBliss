@@ -8,6 +8,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/x-icon" href="images/logo.png">
 </head>
@@ -172,7 +177,7 @@
                                     <th>Items</th>
                                     <th>Total</th>
                                     <th>Status</th>
-                                    <th>Action</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="ongoing-orders-body">
@@ -253,7 +258,14 @@
                                     </table>
                                 </div>
                             </div>
-                            <div class="d-grid mt-3">
+                            <div class="summary-box">
+                                <h5>Sales Chart</h5>
+                                <canvas id="salesChart" height="200"></canvas>
+                            </div>
+                            <div class="d-grid gap-2 mt-3">
+                                <button class="btn btn-outline-primary" id="download-pdf-btn">
+                                    <i class="fas fa-download me-1"></i> Download PDF Report
+                                </button>
                                 <button class="btn btn-outline-danger" id="clear-completed-btn">
                                     <i class="fas fa-trash me-1"></i> Clear All Completed Orders
                                 </button>
@@ -269,8 +281,11 @@
             <div class="row">
                 <div class="col-lg-8">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h3><i class="fas fa-edit me-2"></i>Menu Management</h3>
+                            <button class="btn btn-sm btn-primary" id="add-category-btn">
+                                <i class="fas fa-plus me-1"></i> Add Category
+                            </button>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -301,14 +316,25 @@
                             <form id="menu-item-form">
                                 <div class="mb-3">
                                     <label for="item-category" class="form-label">Category</label>
-                                    <select class="form-select" id="item-category" required>
-                                        <option value="">Select Category</option>
-                                        <option value="APPETIZERS">APPETIZERS</option>
-                                        <option value="WRAPS">WRAPS</option>
-                                        <option value="BURGERS">BURGERS</option>
-                                        <option value="SALADS">SALADS</option>
-                                        <option value="DESSERTS">DESSERTS</option>
-                                    </select>
+                                    <div class="input-group">
+                                        <select class="form-select" id="item-category" required>
+                                            <!-- Categories will be populated dynamically -->
+                                        </select>
+                                        <button type="button" class="btn btn-outline-secondary" id="new-category-btn" title="Add New Category">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 d-none" id="new-category-input">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="new-category-name" placeholder="New category name">
+                                            <button type="button" class="btn btn-success" id="save-new-category-btn">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" id="cancel-new-category-btn">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="item-name" class="form-label">Item Name</label>
@@ -333,6 +359,7 @@
                                 <h5><i class="fas fa-lightbulb me-2"></i>Tips</h5>
                                 <ul class="mb-0 small">
                                     <li>Click on any item to edit it</li>
+                                    <li>Add new categories using the "+" button</li>
                                     <li>Changes will reflect immediately in the order system</li>
                                     <li>Menu data is saved in your browser's local storage</li>
                                 </ul>
@@ -386,6 +413,33 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-success" id="complete-order-btn" data-order-id="">Mark as Complete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="category-form">
+                        <div class="mb-3">
+                            <label for="category-name" class="form-label">Category Name</label>
+                            <input type="text" class="form-control" id="category-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="category-description" class="form-label">Description (Optional)</label>
+                            <textarea class="form-control" id="category-description" rows="2"></textarea>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Add Category</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

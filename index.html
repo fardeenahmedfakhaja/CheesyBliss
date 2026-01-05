@@ -15,6 +15,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
     
@@ -58,6 +61,12 @@
                         <a class="nav-link" href="#" data-tab="menu-management">
                             <i class="fas fa-edit me-1"></i>
                             <span class="nav-text">Menu</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-tab="analytics">
+                            <i class="fas fa-chart-line me-1"></i>
+                            <span class="nav-text">Analytics</span>
                         </a>
                     </li>
                 </ul>
@@ -547,6 +556,125 @@
                                     <li>Changes save automatically</li>
                                     <li>Cost field helps calculate profit</li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Sales Analytics
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <select class="form-select form-select-sm" id="analytics-period" style="width: 150px;">
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="chart-container">
+                                        <canvas id="revenueChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="chart-container">
+                                        <canvas id="profitChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Top Performers
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="topItemsChart"></canvas>
+                            </div>
+                            
+                            <div class="summary-box mt-4">
+                                <h6>Key Metrics</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-success" id="analytics-revenue">₹0</div>
+                                            <small class="text-muted">Revenue</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-primary" id="analytics-profit">₹0</div>
+                                            <small class="text-muted">Profit</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-warning" id="analytics-orders">0</div>
+                                            <small class="text-muted">Orders</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-info" id="analytics-margin">0%</div>
+                                            <small class="text-muted">Margin</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="summary-box mt-3">
+                                <h6>Best Selling Items</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Qty</th>
+                                                <th>Revenue</th>
+                                                <th>Profit</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="best-items-body">
+                                            <!-- Best items will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="summary-box mt-3">
+                                <h6>Profit by Category</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Category</th>
+                                                <th>Profit</th>
+                                                <th>Margin</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="category-profit-body">
+                                            <!-- Category profit will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

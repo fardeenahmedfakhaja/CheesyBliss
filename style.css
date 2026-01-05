@@ -343,6 +343,18 @@ body {
     margin-bottom: 15px;
 }
 
+/* Chart Styles */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.chart-container canvas {
+    max-height: 300px;
+}
+
 /* Buttons */
 .btn {
     border-radius: 8px;
@@ -523,6 +535,14 @@ body {
         font-size: 1rem;
     }
     
+    .chart-container {
+        height: 250px;
+    }
+    
+    .chart-container canvas {
+        max-height: 250px;
+    }
+    
     .quantity-btn {
         width: 32px;
         height: 32px;
@@ -588,6 +608,14 @@ body {
     .form-control, .form-select {
         font-size: 16px; /* Prevent iOS zoom */
         padding: 12px 15px;
+    }
+    
+    .chart-container {
+        height: 200px;
+    }
+    
+    .chart-container canvas {
+        max-height: 200px;
     }
     
     /* Touch-friendly buttons */

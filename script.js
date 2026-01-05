@@ -18,6 +18,11 @@ class RestaurantOrderSystem {
             notes: ''
         };
         
+        // Chart instances
+        this.revenueChart = null;
+        this.profitChart = null;
+        this.topItemsChart = null;
+        
         // Initialize
         this.init();
     }
@@ -183,6 +188,9 @@ class RestaurantOrderSystem {
         // Date filter
         document.getElementById('date-filter').addEventListener('change', () => this.renderCompletedOrders());
         
+        // Analytics period filter
+        document.getElementById('analytics-period').addEventListener('change', () => this.updateAnalytics());
+        
         // Menu management
         document.getElementById('menu-item-form').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -232,6 +240,8 @@ class RestaurantOrderSystem {
             this.renderCompletedOrders();
         } else if (tabId === 'menu-management') {
             this.renderMenuManagement();
+        } else if (tabId === 'analytics') {
+            this.updateAnalytics();
         }
     }
     
@@ -757,6 +767,12 @@ class RestaurantOrderSystem {
         this.updateBadges();
         this.updateStats();
         
+        // Update analytics if on analytics tab
+        const currentTab = document.querySelector('.tab-content.active').id;
+        if (currentTab === 'analytics') {
+            this.updateAnalytics();
+        }
+        
         // Show success
         this.showNotification(`Order #${orderId} completed!`, 'success');
         
@@ -1107,6 +1123,368 @@ class RestaurantOrderSystem {
             this.updateBadges();
             this.showNotification('All completed orders cleared', 'success');
         }
+    }
+    
+    // Update analytics
+    updateAnalytics() {
+        const period = document.getElementById('analytics-period').value;
+        let filteredOrders = this.completedOrders;
+        
+        // Filter orders based on period
+        const now = new Date();
+        switch(period) {
+            case 'today':
+                const today = now.toISOString().split('T')[0];
+                filteredOrders = this.completedOrders.filter(order => 
+                    order.completedTime && order.completedTime.startsWith(today)
+                );
+                break;
+            case 'week':
+                const weekAgo = new Date(now.setDate(now.getDate() - 7)).toISOString().split('T')[0];
+                filteredOrders = this.completedOrders.filter(order => 
+                    order.completedTime && order.completedTime >= weekAgo
+                );
+                break;
+            case 'month':
+                const monthAgo = new Date(now.setMonth(now.getMonth() - 1)).toISOString().split('T')[0];
+                filteredOrders = this.completedOrders.filter(order => 
+                    order.completedTime && order.completedTime >= monthAgo
+                );
+                break;
+            // 'all' uses all orders
+        }
+        
+        this.renderAnalyticsCharts(filteredOrders);
+        this.updateAnalyticsSummary(filteredOrders);
+        this.renderBestItems(filteredOrders);
+        this.renderCategoryProfit(filteredOrders);
+    }
+    
+    // Render analytics charts
+    renderAnalyticsCharts(orders) {
+        // Destroy existing charts if they exist
+        if (this.revenueChart) {
+            this.revenueChart.destroy();
+        }
+        if (this.profitChart) {
+            this.profitChart.destroy();
+        }
+        if (this.topItemsChart) {
+            this.topItemsChart.destroy();
+        }
+        
+        // Group orders by date for revenue and profit charts
+        const ordersByDate = {};
+        orders.forEach(order => {
+            if (order.completedTime) {
+                const date = order.completedTime.split('T')[0];
+                if (!ordersByDate[date]) {
+                    ordersByDate[date] = {
+                        revenue: 0,
+                        profit: 0,
+                        orders: 0
+                    };
+                }
+                ordersByDate[date].revenue += order.total;
+                ordersByDate[date].profit += order.totalProfit || (order.total - (order.totalCost || 0));
+                ordersByDate[date].orders += 1;
+            }
+        });
+        
+        // Sort dates
+        const dates = Object.keys(ordersByDate).sort();
+        
+        // Prepare data for line charts
+        const revenueData = dates.map(date => ordersByDate[date].revenue);
+        const profitData = dates.map(date => ordersByDate[date].profit);
+        
+        // Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        this.revenueChart = new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Revenue',
+                    data: revenueData,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Revenue Trend'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `₹${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Profit Chart
+        const profitCtx = document.getElementById('profitChart').getContext('2d');
+        this.profitChart = new Chart(profitCtx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Profit',
+                    data: profitData,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Profit Trend'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `₹${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Prepare data for top items chart
+        const itemSales = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemSales[item.name]) {
+                    itemSales[item.name] = {
+                        quantity: 0,
+                        revenue: 0,
+                        profit: 0
+                    };
+                }
+                const itemCost = item.cost || 0;
+                const itemProfit = (item.price - itemCost) * item.quantity;
+                
+                itemSales[item.name].quantity += item.quantity;
+                itemSales[item.name].revenue += item.total;
+                itemSales[item.name].profit += itemProfit;
+            });
+        });
+        
+        // Get top 10 items by revenue
+        const topItems = Object.entries(itemSales)
+            .sort((a, b) => b[1].revenue - a[1].revenue)
+            .slice(0, 10);
+        
+        const topItemsNames = topItems.map(([name]) => name.substring(0, 20) + (name.length > 20 ? '...' : ''));
+        const topItemsRevenue = topItems.map(([, data]) => data.revenue);
+        const topItemsProfit = topItems.map(([, data]) => data.profit);
+        
+        // Top Items Chart
+        const topItemsCtx = document.getElementById('topItemsChart').getContext('2d');
+        this.topItemsChart = new Chart(topItemsCtx, {
+            type: 'bar',
+            data: {
+                labels: topItemsNames,
+                datasets: [
+                    {
+                        label: 'Revenue',
+                        data: topItemsRevenue,
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Profit',
+                        data: topItemsProfit,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top Items - Revenue vs Profit'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ₹${context.parsed.y}`;
+                            }
+                        }
+                    },
+                    legend: {
+                        display: true
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update analytics summary
+    updateAnalyticsSummary(orders) {
+        // Calculate totals
+        const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const totalCost = orders.reduce((sum, order) => sum + (order.totalCost || 0), 0);
+        const totalProfit = totalRevenue - totalCost;
+        const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+        const totalOrders = orders.length;
+        
+        // Update display
+        document.getElementById('analytics-revenue').textContent = `₹${totalRevenue}`;
+        document.getElementById('analytics-profit').textContent = `₹${totalProfit}`;
+        document.getElementById('analytics-orders').textContent = totalOrders;
+        document.getElementById('analytics-margin').textContent = `${profitMargin}%`;
+    }
+    
+    // Render best items table
+    renderBestItems(orders) {
+        const itemSales = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemSales[item.name]) {
+                    itemSales[item.name] = {
+                        quantity: 0,
+                        revenue: 0,
+                        profit: 0
+                    };
+                }
+                const itemCost = item.cost || 0;
+                const itemProfit = (item.price - itemCost) * item.quantity;
+                
+                itemSales[item.name].quantity += item.quantity;
+                itemSales[item.name].revenue += item.total;
+                itemSales[item.name].profit += itemProfit;
+            });
+        });
+        
+        // Get top 5 items by revenue
+        const topItems = Object.entries(itemSales)
+            .sort((a, b) => b[1].revenue - a[1].revenue)
+            .slice(0, 5);
+        
+        let html = '';
+        topItems.forEach(([itemName, data]) => {
+            const profitClass = data.profit >= 0 ? 'profit-positive' : 'profit-negative';
+            html += `
+                <tr>
+                    <td>${itemName}</td>
+                    <td>${data.quantity}</td>
+                    <td>₹${data.revenue}</td>
+                    <td class="${profitClass}">₹${data.profit}</td>
+                </tr>
+            `;
+        });
+        
+        document.getElementById('best-items-body').innerHTML = html || 
+            '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
+    }
+    
+    // Render category profit table
+    renderCategoryProfit(orders) {
+        const categoryProfit = {};
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                const menuItem = this.menu.find(m => m.id === item.id);
+                if (menuItem) {
+                    const category = menuItem.category;
+                    if (!categoryProfit[category]) {
+                        categoryProfit[category] = {
+                            revenue: 0,
+                            cost: 0,
+                            profit: 0,
+                            items: 0
+                        };
+                    }
+                    const itemProfit = (item.price - (item.cost || menuItem.cost || 0)) * item.quantity;
+                    
+                    categoryProfit[category].revenue += item.total;
+                    categoryProfit[category].cost += (item.cost || menuItem.cost || 0) * item.quantity;
+                    categoryProfit[category].profit += itemProfit;
+                    categoryProfit[category].items += item.quantity;
+                }
+            });
+        });
+        
+        // Convert to array and sort by profit
+        const categoryData = Object.entries(categoryProfit)
+            .map(([category, data]) => ({
+                category,
+                ...data,
+                margin: data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0
+            }))
+            .sort((a, b) => b.profit - a.profit);
+        
+        let html = '';
+        categoryData.forEach(data => {
+            const profitClass = data.profit >= 0 ? 'profit-positive' : 'profit-negative';
+            html += `
+                <tr>
+                    <td>${data.category}</td>
+                    <td class="${profitClass}">₹${data.profit}</td>
+                    <td>${data.margin}%</td>
+                </tr>
+            `;
+        });
+        
+        document.getElementById('category-profit-body').innerHTML = html || 
+            '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
     }
     
     // Render menu management

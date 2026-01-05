@@ -100,17 +100,6 @@ class RestaurantOrderSystem {
         this.updateStats();
         this.updateBadges();
         this.updateNextOrderNumber();
-        
-        // Check if mobile
-        this.checkMobile();
-    }
-    
-    // Check if mobile device
-    checkMobile() {
-        const isMobile = window.innerWidth <= 768;
-        if (isMobile) {
-            document.body.classList.add('mobile-view');
-        }
     }
     
     // Save all data
@@ -124,12 +113,23 @@ class RestaurantOrderSystem {
     
     // Initialize event listeners
     initEventListeners() {
-        // Tab navigation
-        document.querySelectorAll('.nav-link, .mobile-nav-item').forEach(element => {
+        // Tab navigation - only for nav links now
+        document.querySelectorAll('.nav-link').forEach(element => {
             element.addEventListener('click', (e) => {
                 e.preventDefault();
                 const tabId = element.getAttribute('data-tab');
                 this.switchTab(tabId);
+                
+                // Close navbar on mobile after clicking
+                if (window.innerWidth <= 991) {
+                    const navbarCollapse = document.getElementById('navbarNav');
+                    if (navbarCollapse.classList.contains('show')) {
+                        const bsCollapse = new bootstrap.Collapse(navbarCollapse, {
+                            toggle: false
+                        });
+                        bsCollapse.hide();
+                    }
+                }
             });
         });
         
@@ -200,26 +200,15 @@ class RestaurantOrderSystem {
             const orderId = parseInt(document.getElementById('complete-order-btn').getAttribute('data-order-id'));
             this.completeOrder(orderId);
         });
-        
-        // Window resize for mobile
-        window.addEventListener('resize', () => this.checkMobile());
     }
     
     // Switch between tabs
     switchTab(tabId) {
-        // Update active tab in desktop nav
+        // Update active tab in nav
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.remove('active');
             if (link.getAttribute('data-tab') === tabId) {
                 link.classList.add('active');
-            }
-        });
-        
-        // Update active tab in mobile nav
-        document.querySelectorAll('.mobile-nav-item').forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-tab') === tabId) {
-                item.classList.add('active');
             }
         });
         
@@ -246,7 +235,7 @@ class RestaurantOrderSystem {
         }
     }
     
-    // Render menu items
+    // Render menu items - WITHOUT cost/profit text
     renderMenu(searchTerm = '') {
         const container = document.getElementById('menu-items-container');
         container.innerHTML = '';
@@ -291,7 +280,6 @@ class RestaurantOrderSystem {
                 const currentItem = this.currentOrder.items.find(i => i.id === item.id);
                 const quantity = currentItem ? currentItem.quantity : 0;
                 const isSelected = quantity > 0;
-                const profit = item.price - item.cost;
                 
                 itemDiv.innerHTML = `
                     <div class="menu-item-card ${isSelected ? 'selected' : ''}" 
@@ -299,7 +287,6 @@ class RestaurantOrderSystem {
                         <div>
                             <div class="menu-item-name">${item.name}</div>
                             <div class="menu-item-price">₹${item.price}</div>
-                            <div class="menu-item-cost">Cost: ₹${item.cost} | Profit: ₹${profit}</div>
                         </div>
                         <div class="menu-item-quantity">
                             <button class="quantity-btn minus-btn" data-item-id="${item.id}">
@@ -529,8 +516,6 @@ class RestaurantOrderSystem {
     updateBadges() {
         document.getElementById('ongoing-badge').textContent = this.orders.length;
         document.getElementById('completed-badge').textContent = this.completedOrders.length;
-        document.getElementById('mobile-ongoing-badge').textContent = this.orders.length;
-        document.getElementById('mobile-completed-badge').textContent = this.completedOrders.length;
     }
     
     // Update next order number

@@ -220,6 +220,12 @@ body {
     font-size: 1.1rem;
 }
 
+.menu-item-cost {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 3px;
+}
+
 .menu-item-quantity {
     display: flex;
     align-items: center;
@@ -498,6 +504,21 @@ body {
     color: white;
 }
 
+/* Profit indicator colors */
+.profit-positive {
+    color: var(--success-color);
+}
+
+.profit-negative {
+    color: var(--secondary-color);
+}
+
+/* Summary boxes for profit */
+.summary-box .h5 {
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     body {
@@ -545,6 +566,10 @@ body {
     
     .menu-item-price {
         font-size: 1rem;
+    }
+    
+    .menu-item-cost {
+        font-size: 0.8rem;
     }
     
     .quantity-btn {

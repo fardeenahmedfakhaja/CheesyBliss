@@ -19,9 +19,10 @@ class RestaurantOrderSystem {
         };
         
         // Chart instances
-        this.revenueChart = null;
-        this.profitChart = null;
-        this.topItemsChart = null;
+        this.revenueProfitChart = null;
+        this.categoryRevenueChart = null;
+        this.categoryProfitChart = null;
+        this.topItemsRevenueChart = null;
         
         // Initialize
         this.init();
@@ -622,7 +623,7 @@ class RestaurantOrderSystem {
         }
     }
     
-    // Render ongoing orders
+    // Render ongoing orders with new button layout
     renderOngoingOrders() {
         const tbody = document.getElementById('ongoing-orders-body');
         const emptyState = document.getElementById('no-ongoing-orders');
@@ -644,6 +645,11 @@ class RestaurantOrderSystem {
             
             html += `
                 <tr>
+                    <td>
+                        <button class="btn btn-sm btn-danger delete-order-btn" data-order-id="${order.id}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                     <td><strong>#${order.id}</strong></td>
                     <td>${orderTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td>${order.customerName || 'Walk-in'}</td>
@@ -655,17 +661,12 @@ class RestaurantOrderSystem {
                         </span>
                     </td>
                     <td>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary view-order-btn" data-order-id="${order.id}">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="btn btn-outline-success complete-order-btn" data-order-id="${order.id}">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button class="btn btn-outline-danger delete-order-btn" data-order-id="${order.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-sm btn-success complete-order-btn w-100" data-order-id="${order.id}">
+                            <i class="fas fa-check-circle me-1"></i> Complete
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary view-order-btn w-100 mt-1" data-order-id="${order.id}">
+                            <i class="fas fa-eye me-1"></i> View
+                        </button>
                     </td>
                 </tr>
             `;
@@ -1157,224 +1158,340 @@ class RestaurantOrderSystem {
         this.renderAnalyticsCharts(filteredOrders);
         this.updateAnalyticsSummary(filteredOrders);
         this.renderBestItems(filteredOrders);
-        this.renderCategoryProfit(filteredOrders);
+        this.renderCategoryPerformance(filteredOrders);
     }
     
-    // Render analytics charts
+    // Render new analytics charts
     renderAnalyticsCharts(orders) {
         // Destroy existing charts if they exist
-        if (this.revenueChart) {
-            this.revenueChart.destroy();
+        if (this.revenueProfitChart) {
+            this.revenueProfitChart.destroy();
         }
-        if (this.profitChart) {
-            this.profitChart.destroy();
+        if (this.categoryRevenueChart) {
+            this.categoryRevenueChart.destroy();
         }
-        if (this.topItemsChart) {
-            this.topItemsChart.destroy();
+        if (this.categoryProfitChart) {
+            this.categoryProfitChart.destroy();
+        }
+        if (this.topItemsRevenueChart) {
+            this.topItemsRevenueChart.destroy();
         }
         
-        // Group orders by date for revenue and profit charts
-        const ordersByDate = {};
-        orders.forEach(order => {
-            if (order.completedTime) {
-                const date = order.completedTime.split('T')[0];
-                if (!ordersByDate[date]) {
-                    ordersByDate[date] = {
-                        revenue: 0,
-                        profit: 0,
-                        orders: 0
-                    };
-                }
-                ordersByDate[date].revenue += order.total;
-                ordersByDate[date].profit += order.totalProfit || (order.total - (order.totalCost || 0));
-                ordersByDate[date].orders += 1;
-            }
+        // Calculate category-wise data
+        const categoryData = this.calculateCategoryData(orders);
+        const categories = Object.keys(categoryData);
+        
+        // Prepare data for charts
+        const categoryRevenueData = categories.map(cat => categoryData[cat].revenue);
+        const categoryProfitData = categories.map(cat => categoryData[cat].profit);
+        const categoryMarginData = categories.map(cat => {
+            return categoryData[cat].revenue > 0 
+                ? (categoryData[cat].profit / categoryData[cat].revenue * 100).toFixed(1)
+                : 0;
         });
         
-        // Sort dates
-        const dates = Object.keys(ordersByDate).sort();
-        
-        // Prepare data for line charts
-        const revenueData = dates.map(date => ordersByDate[date].revenue);
-        const profitData = dates.map(date => ordersByDate[date].profit);
-        
-        // Revenue Chart
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        this.revenueChart = new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: [{
-                    label: 'Revenue',
-                    data: revenueData,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Revenue Trend'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `₹${context.parsed.y}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₹' + value;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Profit Chart
-        const profitCtx = document.getElementById('profitChart').getContext('2d');
-        this.profitChart = new Chart(profitCtx, {
-            type: 'line',
-            data: {
-                labels: dates,
-                datasets: [{
-                    label: 'Profit',
-                    data: profitData,
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    tension: 0.1,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Profit Trend'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `₹${context.parsed.y}`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '₹' + value;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Prepare data for top items chart
-        const itemSales = {};
-        orders.forEach(order => {
-            order.items.forEach(item => {
-                if (!itemSales[item.name]) {
-                    itemSales[item.name] = {
-                        quantity: 0,
-                        revenue: 0,
-                        profit: 0
-                    };
-                }
-                const itemCost = item.cost || 0;
-                const itemProfit = (item.price - itemCost) * item.quantity;
-                
-                itemSales[item.name].quantity += item.quantity;
-                itemSales[item.name].revenue += item.total;
-                itemSales[item.name].profit += itemProfit;
-            });
-        });
-        
-        // Get top 10 items by revenue
-        const topItems = Object.entries(itemSales)
+        // Calculate item-wise data for top items
+        const itemData = this.calculateItemData(orders);
+        const topItems = Object.entries(itemData)
             .sort((a, b) => b[1].revenue - a[1].revenue)
-            .slice(0, 10);
+            .slice(0, 8);
         
-        const topItemsNames = topItems.map(([name]) => name.substring(0, 20) + (name.length > 20 ? '...' : ''));
-        const topItemsRevenue = topItems.map(([, data]) => data.revenue);
-        const topItemsProfit = topItems.map(([, data]) => data.profit);
+        const topItemNames = topItems.map(([name]) => name);
+        const topItemRevenue = topItems.map(([, data]) => data.revenue);
+        const topItemProfit = topItems.map(([, data]) => data.profit);
         
-        // Top Items Chart
-        const topItemsCtx = document.getElementById('topItemsChart').getContext('2d');
-        this.topItemsChart = new Chart(topItemsCtx, {
+        // Colors for charts
+        const colors = {
+            revenue: 'rgba(75, 192, 192, 0.8)',
+            profit: 'rgba(255, 99, 132, 0.8)',
+            categoryColors: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(201, 203, 207, 0.8)',
+                'rgba(255, 99, 132, 0.8)'
+            ]
+        };
+        
+        // 1. Revenue vs Profit Chart (Overall)
+        const revenueProfitCtx = document.getElementById('revenueProfitChart').getContext('2d');
+        this.revenueProfitChart = new Chart(revenueProfitCtx, {
             type: 'bar',
             data: {
-                labels: topItemsNames,
+                labels: ['Revenue', 'Profit'],
+                datasets: [{
+                    label: 'Amount (₹)',
+                    data: [
+                        orders.reduce((sum, order) => sum + order.total, 0),
+                        orders.reduce((sum, order) => sum + (order.totalProfit || (order.total - (order.totalCost || 0))), 0)
+                    ],
+                    backgroundColor: [colors.revenue, colors.profit],
+                    borderColor: ['rgb(75, 192, 192)', 'rgb(255, 99, 132)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Overall Revenue vs Profit',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `₹${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 2. Category-wise Revenue Chart
+        const categoryRevenueCtx = document.getElementById('categoryRevenueChart').getContext('2d');
+        this.categoryRevenueChart = new Chart(categoryRevenueCtx, {
+            type: 'doughnut',
+            data: {
+                labels: categories,
+                datasets: [{
+                    data: categoryRevenueData,
+                    backgroundColor: colors.categoryColors.slice(0, categories.length),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Revenue by Category',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12,
+                            font: {
+                                size: 10
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ₹${value.toLocaleString()} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 3. Category-wise Profit Chart
+        const categoryProfitCtx = document.getElementById('categoryProfitChart').getContext('2d');
+        this.categoryProfitChart = new Chart(categoryProfitCtx, {
+            type: 'bar',
+            data: {
+                labels: categories,
+                datasets: [{
+                    label: 'Profit (₹)',
+                    data: categoryProfitData,
+                    backgroundColor: colors.categoryColors.slice(0, categories.length),
+                    borderColor: colors.categoryColors.slice(0, categories.length).map(color => color.replace('0.8', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Profit by Category',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `₹${context.parsed.y.toLocaleString()}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 4. Top Items Revenue Chart
+        const topItemsCtx = document.getElementById('topItemsRevenueChart').getContext('2d');
+        this.topItemsRevenueChart = new Chart(topItemsCtx, {
+            type: 'horizontalBar',
+            data: {
+                labels: topItemNames.map(name => name.length > 20 ? name.substring(0, 20) + '...' : name),
                 datasets: [
                     {
                         label: 'Revenue',
-                        data: topItemsRevenue,
+                        data: topItemRevenue,
                         backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderColor: 'rgb(54, 162, 235)',
                         borderWidth: 1
                     },
                     {
                         label: 'Profit',
-                        data: topItemsProfit,
+                        data: topItemProfit,
                         backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderColor: 'rgb(255, 99, 132)',
                         borderWidth: 1
                     }
                 ]
             },
             options: {
+                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Top Items - Revenue vs Profit'
+                        text: 'Top Items - Revenue vs Profit',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return `${context.dataset.label}: ₹${context.parsed.y}`;
+                                return `${context.dataset.label}: ₹${context.parsed.x.toLocaleString()}`;
                             }
                         }
-                    },
-                    legend: {
-                        display: true
                     }
                 },
                 scales: {
                     x: {
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    },
-                    y: {
                         beginAtZero: true,
                         ticks: {
                             callback: function(value) {
-                                return '₹' + value;
+                                return '₹' + value.toLocaleString();
                             }
                         }
                     }
                 }
             }
         });
+    }
+    
+    // Calculate category data for charts
+    calculateCategoryData(orders) {
+        const categoryData = {};
+        
+        // Initialize with all categories
+        this.categories.forEach(category => {
+            categoryData[category] = {
+                revenue: 0,
+                profit: 0,
+                itemsSold: 0
+            };
+        });
+        
+        // Calculate totals
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                const menuItem = this.menu.find(m => m.id === item.id);
+                if (menuItem) {
+                    const category = menuItem.category;
+                    if (!categoryData[category]) {
+                        categoryData[category] = {
+                            revenue: 0,
+                            profit: 0,
+                            itemsSold: 0
+                        };
+                    }
+                    
+                    const itemRevenue = item.price * item.quantity;
+                    const itemCost = (item.cost || menuItem.cost || 0) * item.quantity;
+                    const itemProfit = itemRevenue - itemCost;
+                    
+                    categoryData[category].revenue += itemRevenue;
+                    categoryData[category].profit += itemProfit;
+                    categoryData[category].itemsSold += item.quantity;
+                }
+            });
+        });
+        
+        return categoryData;
+    }
+    
+    // Calculate item data for charts
+    calculateItemData(orders) {
+        const itemData = {};
+        
+        orders.forEach(order => {
+            order.items.forEach(item => {
+                if (!itemData[item.name]) {
+                    itemData[item.name] = {
+                        revenue: 0,
+                        profit: 0,
+                        quantity: 0
+                    };
+                }
+                
+                const menuItem = this.menu.find(m => m.id === item.id);
+                const itemCost = (item.cost || (menuItem ? menuItem.cost : 0) || 0) * item.quantity;
+                const itemRevenue = item.price * item.quantity;
+                const itemProfit = itemRevenue - itemCost;
+                
+                itemData[item.name].revenue += itemRevenue;
+                itemData[item.name].profit += itemProfit;
+                itemData[item.name].quantity += item.quantity;
+            });
+        });
+        
+        return itemData;
     }
     
     // Update analytics summary
@@ -1387,35 +1504,18 @@ class RestaurantOrderSystem {
         const totalOrders = orders.length;
         
         // Update display
-        document.getElementById('analytics-revenue').textContent = `₹${totalRevenue}`;
-        document.getElementById('analytics-profit').textContent = `₹${totalProfit}`;
+        document.getElementById('analytics-revenue').textContent = `₹${totalRevenue.toLocaleString()}`;
+        document.getElementById('analytics-profit').textContent = `₹${totalProfit.toLocaleString()}`;
         document.getElementById('analytics-orders').textContent = totalOrders;
         document.getElementById('analytics-margin').textContent = `${profitMargin}%`;
     }
     
     // Render best items table
     renderBestItems(orders) {
-        const itemSales = {};
-        orders.forEach(order => {
-            order.items.forEach(item => {
-                if (!itemSales[item.name]) {
-                    itemSales[item.name] = {
-                        quantity: 0,
-                        revenue: 0,
-                        profit: 0
-                    };
-                }
-                const itemCost = item.cost || 0;
-                const itemProfit = (item.price - itemCost) * item.quantity;
-                
-                itemSales[item.name].quantity += item.quantity;
-                itemSales[item.name].revenue += item.total;
-                itemSales[item.name].profit += itemProfit;
-            });
-        });
+        const itemData = this.calculateItemData(orders);
         
         // Get top 5 items by revenue
-        const topItems = Object.entries(itemSales)
+        const topItems = Object.entries(itemData)
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 5);
         
@@ -1426,8 +1526,8 @@ class RestaurantOrderSystem {
                 <tr>
                     <td>${itemName}</td>
                     <td>${data.quantity}</td>
-                    <td>₹${data.revenue}</td>
-                    <td class="${profitClass}">₹${data.profit}</td>
+                    <td>₹${data.revenue.toLocaleString()}</td>
+                    <td class="${profitClass}">₹${data.profit.toLocaleString()}</td>
                 </tr>
             `;
         });
@@ -1436,55 +1536,34 @@ class RestaurantOrderSystem {
             '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
     }
     
-    // Render category profit table
-    renderCategoryProfit(orders) {
-        const categoryProfit = {};
-        orders.forEach(order => {
-            order.items.forEach(item => {
-                const menuItem = this.menu.find(m => m.id === item.id);
-                if (menuItem) {
-                    const category = menuItem.category;
-                    if (!categoryProfit[category]) {
-                        categoryProfit[category] = {
-                            revenue: 0,
-                            cost: 0,
-                            profit: 0,
-                            items: 0
-                        };
-                    }
-                    const itemProfit = (item.price - (item.cost || menuItem.cost || 0)) * item.quantity;
-                    
-                    categoryProfit[category].revenue += item.total;
-                    categoryProfit[category].cost += (item.cost || menuItem.cost || 0) * item.quantity;
-                    categoryProfit[category].profit += itemProfit;
-                    categoryProfit[category].items += item.quantity;
-                }
-            });
-        });
+    // Render category performance table
+    renderCategoryPerformance(orders) {
+        const categoryData = this.calculateCategoryData(orders);
         
-        // Convert to array and sort by profit
-        const categoryData = Object.entries(categoryProfit)
+        // Convert to array and sort by revenue
+        const categoryArray = Object.entries(categoryData)
             .map(([category, data]) => ({
                 category,
                 ...data,
                 margin: data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0
             }))
-            .sort((a, b) => b.profit - a.profit);
+            .sort((a, b) => b.revenue - a.revenue);
         
         let html = '';
-        categoryData.forEach(data => {
+        categoryArray.forEach(data => {
             const profitClass = data.profit >= 0 ? 'profit-positive' : 'profit-negative';
             html += `
                 <tr>
                     <td>${data.category}</td>
-                    <td class="${profitClass}">₹${data.profit}</td>
+                    <td>₹${data.revenue.toLocaleString()}</td>
+                    <td class="${profitClass}">₹${data.profit.toLocaleString()}</td>
                     <td>${data.margin}%</td>
                 </tr>
             `;
         });
         
-        document.getElementById('category-profit-body').innerHTML = html || 
-            '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
+        document.getElementById('category-performance-body').innerHTML = html || 
+            '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
     }
     
     // Render menu management

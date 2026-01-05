@@ -6,7 +6,6 @@ class RestaurantOrderSystem {
         this.categories = this.loadData('categories') || this.getDefaultCategories();
         this.orders = this.loadData('orders') || [];
         this.completedOrders = this.loadData('completedOrders') || [];
-        this.orderTemplates = this.loadData('orderTemplates') || [];
         this.nextOrderId = this.loadData('nextOrderId') || 1001;
         
         // Current order state
@@ -23,37 +22,37 @@ class RestaurantOrderSystem {
         this.init();
     }
     
-    // Default menu items (without stock)
+    // Default menu items with cost
     getDefaultMenu() {
         return [
             // APPETIZERS
-            { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140 },
-            { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125 },
-            { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99 },
-            { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109 },
-            { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75 },
-            { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99 },
+            { id: 1, category: 'APPETIZERS', name: 'Chicken loaded fries', price: 140, cost: 70 },
+            { id: 2, category: 'APPETIZERS', name: 'Cheesy veg loaded fries', price: 125, cost: 60 },
+            { id: 3, category: 'APPETIZERS', name: 'Salted fries', price: 99, cost: 40 },
+            { id: 4, category: 'APPETIZERS', name: 'Peri peri fries', price: 109, cost: 45 },
+            { id: 5, category: 'APPETIZERS', name: 'Chicken Nuggets (4 pcs)', price: 75, cost: 35 },
+            { id: 6, category: 'APPETIZERS', name: 'Chicken Nuggets (6 pcs)', price: 99, cost: 50 },
             
             // WRAPS
-            { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130 },
-            { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120 },
-            { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150 },
-            { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120 },
+            { id: 7, category: 'WRAPS', name: 'Chicken tikka wrap', price: 130, cost: 60 },
+            { id: 8, category: 'WRAPS', name: 'Paneer tikka wrap', price: 120, cost: 55 },
+            { id: 9, category: 'WRAPS', name: 'Chicken zinger wrap', price: 150, cost: 70 },
+            { id: 10, category: 'WRAPS', name: 'Chicken nugget wrap', price: 120, cost: 55 },
             
             // BURGERS
-            { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115 },
-            { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135 },
+            { id: 11, category: 'BURGERS', name: 'Classic Veg burger', price: 115, cost: 50 },
+            { id: 12, category: 'BURGERS', name: 'Chicken Bliss burger', price: 135, cost: 60 },
             
             // SALADS
-            { id: 13, category: 'SALADS', name: 'Veg salad', price: 99 },
-            { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130 },
+            { id: 13, category: 'SALADS', name: 'Veg salad', price: 99, cost: 40 },
+            { id: 14, category: 'SALADS', name: 'Signature chicken salad', price: 130, cost: 55 },
             
             // DESSERTS
-            { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90 },
-            { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90 },
-            { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130 },
-            { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110 },
-            { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120 }
+            { id: 15, category: 'DESSERTS', name: 'Chocolate brownie', price: 90, cost: 35 },
+            { id: 16, category: 'DESSERTS', name: 'Red velvet brownie', price: 90, cost: 35 },
+            { id: 17, category: 'DESSERTS', name: 'Lotus biscoff drip brownie', price: 130, cost: 50 },
+            { id: 18, category: 'DESSERTS', name: 'Strawberry choco brownie', price: 110, cost: 45 },
+            { id: 19, category: 'DESSERTS', name: 'Chocolate strawberry cup', price: 120, cost: 50 }
         ];
     }
     
@@ -120,7 +119,6 @@ class RestaurantOrderSystem {
         this.saveData('categories', this.categories);
         this.saveData('orders', this.orders);
         this.saveData('completedOrders', this.completedOrders);
-        this.saveData('orderTemplates', this.orderTemplates);
         this.saveData('nextOrderId', this.nextOrderId);
     }
     
@@ -163,8 +161,6 @@ class RestaurantOrderSystem {
         // Action buttons
         document.getElementById('clear-order-btn').addEventListener('click', () => this.clearCurrentOrder());
         document.getElementById('place-order-btn').addEventListener('click', () => this.placeOrder());
-        document.getElementById('save-template-btn').addEventListener('click', () => this.saveOrderTemplate());
-        document.getElementById('hold-order-btn').addEventListener('click', () => this.holdOrder());
         
         // Quick action buttons
         document.getElementById('quick-drinks').addEventListener('click', () => this.showCategory('DRINKS'));
@@ -295,6 +291,7 @@ class RestaurantOrderSystem {
                 const currentItem = this.currentOrder.items.find(i => i.id === item.id);
                 const quantity = currentItem ? currentItem.quantity : 0;
                 const isSelected = quantity > 0;
+                const profit = item.price - item.cost;
                 
                 itemDiv.innerHTML = `
                     <div class="menu-item-card ${isSelected ? 'selected' : ''}" 
@@ -302,6 +299,7 @@ class RestaurantOrderSystem {
                         <div>
                             <div class="menu-item-name">${item.name}</div>
                             <div class="menu-item-price">₹${item.price}</div>
+                            <div class="menu-item-cost">Cost: ₹${item.cost} | Profit: ₹${profit}</div>
                         </div>
                         <div class="menu-item-quantity">
                             <button class="quantity-btn minus-btn" data-item-id="${item.id}">
@@ -359,14 +357,19 @@ class RestaurantOrderSystem {
                 // Update existing item
                 this.currentOrder.items[existingItemIndex].quantity = quantity;
                 this.currentOrder.items[existingItemIndex].total = quantity * menuItem.price;
+                this.currentOrder.items[existingItemIndex].totalCost = quantity * menuItem.cost;
+                this.currentOrder.items[existingItemIndex].profit = quantity * (menuItem.price - menuItem.cost);
             } else {
                 // Add new item
                 this.currentOrder.items.push({
                     id: itemId,
                     name: menuItem.name,
                     price: menuItem.price,
+                    cost: menuItem.cost,
                     quantity: quantity,
-                    total: quantity * menuItem.price
+                    total: quantity * menuItem.price,
+                    totalCost: quantity * menuItem.cost,
+                    profit: quantity * (menuItem.price - menuItem.cost)
                 });
             }
         } else if (existingItemIndex >= 0) {
@@ -413,9 +416,14 @@ class RestaurantOrderSystem {
         
         let html = '';
         let total = 0;
+        let totalCost = 0;
+        let totalProfit = 0;
         
         this.currentOrder.items.forEach((item, index) => {
             total += item.total;
+            totalCost += item.totalCost || (item.quantity * item.cost);
+            totalProfit += item.profit || (item.quantity * (item.price - item.cost));
+            
             html += `
                 <tr>
                     <td>${item.name}</td>
@@ -474,9 +482,12 @@ class RestaurantOrderSystem {
         const container = document.getElementById('summary-items');
         let html = '';
         let total = 0;
+        let totalProfit = 0;
         
         this.currentOrder.items.forEach(item => {
             total += item.total;
+            totalProfit += item.profit || (item.quantity * (item.price - item.cost));
+            
             html += `
                 <div class="summary-item">
                     <span>${item.name} x${item.quantity}</span>
@@ -503,6 +514,8 @@ class RestaurantOrderSystem {
         
         // Calculate stats
         const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+        const todayCost = todayOrders.reduce((sum, order) => sum + (order.totalCost || 0), 0);
+        const todayProfit = todayRevenue - todayCost;
         const todayItems = todayOrders.reduce((sum, order) => 
             sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0);
         
@@ -532,8 +545,11 @@ class RestaurantOrderSystem {
             return;
         }
         
-        // Calculate total
+        // Calculate totals
         const total = this.currentOrder.items.reduce((sum, item) => sum + item.total, 0);
+        const totalCost = this.currentOrder.items.reduce((sum, item) => 
+            sum + (item.totalCost || (item.quantity * item.cost)), 0);
+        const totalProfit = total - totalCost;
         
         // Create order
         const order = {
@@ -544,6 +560,8 @@ class RestaurantOrderSystem {
             paymentMethod: this.currentOrder.paymentMethod,
             items: [...this.currentOrder.items],
             total: total,
+            totalCost: totalCost,
+            totalProfit: totalProfit,
             orderTime: new Date().toISOString(),
             status: 'preparing',
             placedBy: 'System'
@@ -599,56 +617,6 @@ class RestaurantOrderSystem {
         // Update UI
         this.updateSelectedItemsTable();
         this.updateSummary();
-    }
-    
-    // Save order template
-    saveOrderTemplate() {
-        if (this.currentOrder.items.length === 0) {
-            this.showNotification('No items to save as template', 'error');
-            return;
-        }
-        
-        const templateName = prompt('Enter template name:', `Template ${this.orderTemplates.length + 1}`);
-        if (!templateName) return;
-        
-        const template = {
-            id: Date.now(),
-            name: templateName,
-            items: [...this.currentOrder.items],
-            customerName: this.currentOrder.customerName,
-            orderType: this.currentOrder.orderType,
-            createdAt: new Date().toISOString()
-        };
-        
-        this.orderTemplates.push(template);
-        this.saveData('orderTemplates', this.orderTemplates);
-        
-        this.showNotification(`Template "${templateName}" saved!`, 'success');
-    }
-    
-    // Hold order
-    holdOrder() {
-        if (this.currentOrder.items.length === 0) {
-            this.showNotification('No items to hold', 'error');
-            return;
-        }
-        
-        // Create temporary order
-        const tempOrder = {
-            id: `TEMP_${Date.now()}`,
-            ...this.currentOrder,
-            orderTime: new Date().toISOString(),
-            status: 'hold'
-        };
-        
-        this.orders.unshift(tempOrder);
-        this.saveData('orders', this.orders);
-        
-        this.clearCurrentOrder();
-        this.updateBadges();
-        
-        this.showNotification('Order placed on hold', 'success');
-        this.switchTab('ongoing-orders');
     }
     
     // Show category
@@ -891,6 +859,8 @@ class RestaurantOrderSystem {
             const orderTime = new Date(order.orderTime);
             const completedTime = new Date(order.completedTime);
             const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+            const profit = order.totalProfit || (order.total - (order.totalCost || 0));
+            const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
             
             html += `
                 <tr>
@@ -899,6 +869,7 @@ class RestaurantOrderSystem {
                     <td>${order.customerName || 'Walk-in'}</td>
                     <td>${itemsCount} items</td>
                     <td>₹${order.total}</td>
+                    <td class="${profitClass}">₹${profit}</td>
                     <td>${completedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                 </tr>
             `;
@@ -914,10 +885,15 @@ class RestaurantOrderSystem {
     updateSalesSummary(orders) {
         // Calculate totals
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+        const totalCost = orders.reduce((sum, order) => sum + (order.totalCost || 0), 0);
+        const totalProfit = totalRevenue - totalCost;
+        const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
         const totalOrders = orders.length;
         
         document.getElementById('total-revenue').textContent = `₹${totalRevenue}`;
         document.getElementById('total-orders').textContent = totalOrders;
+        document.getElementById('total-profit').textContent = `₹${totalProfit}`;
+        document.getElementById('profit-margin').textContent = `${profitMargin}%`;
         
         // Calculate item-wise sales
         const itemSales = {};
@@ -926,11 +902,18 @@ class RestaurantOrderSystem {
                 if (!itemSales[item.name]) {
                     itemSales[item.name] = {
                         quantity: 0,
-                        revenue: 0
+                        revenue: 0,
+                        cost: 0,
+                        profit: 0
                     };
                 }
+                const itemCost = item.cost || 0;
+                const itemProfit = (item.price - itemCost) * item.quantity;
+                
                 itemSales[item.name].quantity += item.quantity;
                 itemSales[item.name].revenue += item.total;
+                itemSales[item.name].cost += itemCost * item.quantity;
+                itemSales[item.name].profit += itemProfit;
             });
         });
         
@@ -941,17 +924,21 @@ class RestaurantOrderSystem {
         
         let topItemsHtml = '';
         topItems.forEach(([itemName, data]) => {
+            const margin = data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0;
+            const profitClass = data.profit >= 0 ? 'profit-positive' : 'profit-negative';
             topItemsHtml += `
                 <tr>
                     <td>${itemName}</td>
                     <td>${data.quantity}</td>
                     <td>₹${data.revenue}</td>
+                    <td class="${profitClass}">₹${data.profit}</td>
+                    <td>${margin}%</td>
                 </tr>
             `;
         });
         
         document.getElementById('top-items-body').innerHTML = topItemsHtml || 
-            '<tr><td colspan="3" class="text-center text-muted">No data</td></tr>';
+            '<tr><td colspan="5" class="text-center text-muted">No data</td></tr>';
     }
     
     // Download PDF report
@@ -976,6 +963,9 @@ class RestaurantOrderSystem {
         
         // Add summary
         const totalRevenue = this.completedOrders.reduce((sum, order) => sum + order.total, 0);
+        const totalCost = this.completedOrders.reduce((sum, order) => sum + (order.totalCost || 0), 0);
+        const totalProfit = totalRevenue - totalCost;
+        const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : 0;
         const totalOrders = this.completedOrders.length;
         
         doc.setFontSize(14);
@@ -985,6 +975,9 @@ class RestaurantOrderSystem {
         doc.setFontSize(11);
         doc.text(`Total Orders: ${totalOrders}`, 20, 55);
         doc.text(`Total Revenue: ₹${totalRevenue}`, 20, 62);
+        doc.text(`Total Cost: ₹${totalCost}`, 20, 69);
+        doc.text(`Total Profit: ₹${totalProfit}`, 20, 76);
+        doc.text(`Profit Margin: ${profitMargin}%`, 20, 83);
         
         // Calculate item-wise sales
         const itemSales = {};
@@ -993,57 +986,126 @@ class RestaurantOrderSystem {
                 if (!itemSales[item.name]) {
                     itemSales[item.name] = {
                         quantity: 0,
-                        revenue: 0
+                        revenue: 0,
+                        cost: 0,
+                        profit: 0
                     };
                 }
+                const itemCost = item.cost || 0;
+                const itemProfit = (item.price - itemCost) * item.quantity;
+                
                 itemSales[item.name].quantity += item.quantity;
                 itemSales[item.name].revenue += item.total;
+                itemSales[item.name].cost += itemCost * item.quantity;
+                itemSales[item.name].profit += itemProfit;
             });
         });
         
-        // Prepare table data
-        const tableData = Object.entries(itemSales).map(([itemName, data], index) => [
-            index + 1,
-            itemName,
-            data.quantity,
-            `₹${data.revenue}`
-        ]);
+        // Prepare table data for item-wise sales with profit
+        const tableData = Object.entries(itemSales).map(([itemName, data], index) => {
+            const margin = data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0;
+            return [
+                index + 1,
+                itemName,
+                data.quantity,
+                `₹${data.revenue}`,
+                `₹${data.cost}`,
+                `₹${data.profit}`,
+                `${margin}%`
+            ];
+        });
         
-        // Add item-wise sales table
+        // Add item-wise sales table with profit
         doc.autoTable({
-            head: [['#', 'Item Name', 'Quantity', 'Revenue']],
+            head: [['#', 'Item Name', 'Qty', 'Revenue', 'Cost', 'Profit', 'Margin']],
             body: tableData,
-            startY: 70,
+            startY: 90,
             theme: 'grid',
             headStyles: { fillColor: [255, 107, 53] }
         });
         
         // Add recent orders table
         const recentOrders = this.completedOrders.slice(0, 10);
-        const recentOrdersData = recentOrders.map((order, index) => [
-            order.id,
-            new Date(order.orderTime).toLocaleDateString(),
-            order.customerName || 'Walk-in',
-            order.items.reduce((sum, item) => sum + item.quantity, 0),
-            `₹${order.total}`
-        ]);
+        const recentOrdersData = recentOrders.map((order, index) => {
+            const profit = order.totalProfit || (order.total - (order.totalCost || 0));
+            const margin = order.total > 0 ? ((profit / order.total) * 100).toFixed(1) : 0;
+            return [
+                order.id,
+                new Date(order.orderTime).toLocaleDateString(),
+                order.items.reduce((sum, item) => sum + item.quantity, 0),
+                `₹${order.total}`,
+                `₹${profit}`,
+                `${margin}%`
+            ];
+        });
         
         doc.addPage();
         doc.setFontSize(14);
-        doc.text('Recent Orders', 20, 20);
+        doc.text('Recent Orders with Profit', 20, 20);
         
         doc.autoTable({
-            head: [['Order #', 'Date', 'Customer', 'Items', 'Total']],
+            head: [['Order #', 'Date', 'Items', 'Total', 'Profit', 'Margin']],
             body: recentOrdersData,
             startY: 30,
             theme: 'grid',
             headStyles: { fillColor: [41, 128, 185] }
         });
         
-        // Save PDF
-        doc.save(`sales-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        // Add profit trend analysis
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('Profit Analysis by Category', 20, 20);
         
-        this.showNotification('PDF report downloaded!', 'success');
+        // Calculate profit by category
+        const categoryProfit = {};
+        this.completedOrders.forEach(order => {
+            order.items.forEach(item => {
+                const menuItem = this.menu.find(m => m.id === item.id);
+                if (menuItem) {
+                    const category = menuItem.category;
+                    if (!categoryProfit[category]) {
+                        categoryProfit[category] = {
+                            revenue: 0,
+                            cost: 0,
+                            profit: 0,
+                            items: 0
+                        };
+                    }
+                    const itemProfit = (item.price - (item.cost || menuItem.cost || 0)) * item.quantity;
+                    
+                    categoryProfit[category].revenue += item.total;
+                    categoryProfit[category].cost += (item.cost || menuItem.cost || 0) * item.quantity;
+                    categoryProfit[category].profit += itemProfit;
+                    categoryProfit[category].items += item.quantity;
+                }
+            });
+        });
+        
+        const categoryData = Object.entries(categoryProfit).map(([category, data], index) => {
+            const margin = data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : 0;
+            return [
+                index + 1,
+                category,
+                data.items,
+                `₹${data.revenue}`,
+                `₹${data.cost}`,
+                `₹${data.profit}`,
+                `${margin}%`
+            ];
+        });
+        
+        doc.autoTable({
+            head: [['#', 'Category', 'Items', 'Revenue', 'Cost', 'Profit', 'Margin']],
+            body: categoryData,
+            startY: 30,
+            theme: 'grid',
+            headStyles: { fillColor: [102, 51, 153] }
+        });
+        
+        // Save PDF
+        doc.save(`sales-profit-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+        this.showNotification('PDF report with profit analysis downloaded!', 'success');
     }
     
     // Clear completed orders
@@ -1092,7 +1154,7 @@ class RestaurantOrderSystem {
             // Category header
             html += `
                 <tr class="table-secondary">
-                    <td colspan="4" class="fw-bold">
+                    <td colspan="6" class="fw-bold">
                         ${category}
                         <button class="btn btn-sm btn-outline-danger float-end delete-category-btn" 
                                 data-category="${category}">
@@ -1105,11 +1167,18 @@ class RestaurantOrderSystem {
             // Category items
             const items = categories[category] || [];
             items.forEach((item, index) => {
+                const profit = item.price - item.cost;
+                const margin = item.price > 0 ? ((profit / item.price) * 100).toFixed(1) : 0;
+                const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
                 html += `
                     <tr>
                         <td></td>
                         <td>${item.name}</td>
+                        <td>₹${item.cost}</td>
                         <td>₹${item.price}</td>
+                        <td class="${profitClass}">
+                            ₹${profit} (${margin}%)
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary edit-item-btn" 
                                     data-item-id="${item.id}">
@@ -1159,6 +1228,7 @@ class RestaurantOrderSystem {
         document.getElementById('item-category').value = item.category;
         document.getElementById('item-name').value = item.name;
         document.getElementById('item-price').value = item.price;
+        document.getElementById('item-cost').value = item.cost || 0;
         document.getElementById('edit-item-id').value = item.id;
         
         // Scroll to form
@@ -1170,11 +1240,18 @@ class RestaurantOrderSystem {
         const category = document.getElementById('item-category').value;
         const name = document.getElementById('item-name').value.trim();
         const price = parseInt(document.getElementById('item-price').value);
+        const cost = parseInt(document.getElementById('item-cost').value) || 0;
         const editItemId = document.getElementById('edit-item-id').value;
         
         if (!category || !name || !price || price <= 0) {
             this.showNotification('Please fill in all required fields', 'error');
             return;
+        }
+        
+        if (cost >= price) {
+            if (!confirm('Cost is higher than or equal to price. This will result in zero or negative profit. Continue?')) {
+                return;
+            }
         }
         
         if (editItemId) {
@@ -1186,15 +1263,17 @@ class RestaurantOrderSystem {
                 this.menu[itemIndex].category = category;
                 this.menu[itemIndex].name = name;
                 this.menu[itemIndex].price = price;
+                this.menu[itemIndex].cost = cost;
             }
         } else {
             // Add new item
-            const newId = Math.max(...this.menu.map(i => i.id)) + 1;
+            const newId = this.menu.length > 0 ? Math.max(...this.menu.map(i => i.id)) + 1 : 1;
             this.menu.push({
                 id: newId,
                 category: category,
                 name: name,
-                price: price
+                price: price,
+                cost: cost
             });
         }
         

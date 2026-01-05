@@ -188,22 +188,12 @@
 
                     <!-- Action Buttons -->
                     <div class="row mt-3 g-2">
-                        <div class="col-6 col-md-3">
+                        <div class="col-6">
                             <button class="btn btn-outline-secondary w-100" id="clear-order-btn">
                                 <i class="fas fa-times me-1"></i> Clear
                             </button>
                         </div>
-                        <div class="col-6 col-md-3">
-                            <button class="btn btn-warning w-100" id="save-template-btn">
-                                <i class="fas fa-save me-1"></i> Save Template
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <button class="btn btn-info w-100" id="hold-order-btn">
-                                <i class="fas fa-pause me-1"></i> Hold Order
-                            </button>
-                        </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6">
                             <button class="btn btn-success w-100" id="place-order-btn">
                                 <i class="fas fa-check me-1"></i> Place Order
                             </button>
@@ -392,6 +382,7 @@
                                             <th>Customer</th>
                                             <th>Items</th>
                                             <th>Total</th>
+                                            <th>Profit</th>
                                             <th>Completed</th>
                                         </tr>
                                     </thead>
@@ -424,7 +415,25 @@
                             </div>
 
                             <div class="summary-box mb-4">
-                                <h6>Item-wise Sales</h6>
+                                <h6>Profit Analysis</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-success" id="total-profit">₹0</div>
+                                            <small class="text-muted">Total Profit</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2">
+                                            <div class="h5 text-info" id="profit-margin">0%</div>
+                                            <small class="text-muted">Margin</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="summary-box mb-4">
+                                <h6>Item-wise Sales & Profit</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm">
                                         <thead>
@@ -432,6 +441,8 @@
                                                 <th>Item</th>
                                                 <th>Qty Sold</th>
                                                 <th>Revenue</th>
+                                                <th>Profit</th>
+                                                <th>Margin</th>
                                             </tr>
                                         </thead>
                                         <tbody id="top-items-body">
@@ -475,7 +486,9 @@
                                         <tr>
                                             <th>Category</th>
                                             <th>Item Name</th>
+                                            <th>Cost</th>
                                             <th>Price</th>
+                                            <th>Profit</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -530,6 +543,12 @@
                                     <input type="number" class="form-control" id="item-price" min="1" required>
                                 </div>
 
+                                <div class="mb-3">
+                                    <label class="form-label">Cost (₹)</label>
+                                    <input type="number" class="form-control" id="item-cost" min="0" required>
+                                    <div class="form-text">Cost to make this item (for profit calculation)</div>
+                                </div>
+
                                 <input type="hidden" id="edit-item-id">
                                 
                                 <div class="d-grid gap-2">
@@ -548,6 +567,7 @@
                                     <li>Click on any item to edit it</li>
                                     <li>Add new categories using the + button</li>
                                     <li>Changes save automatically</li>
+                                    <li>Cost field helps calculate profit</li>
                                 </ul>
                             </div>
                         </div>

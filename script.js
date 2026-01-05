@@ -23,6 +23,7 @@ class RestaurantOrderSystem {
         this.categoryRevenueChart = null;
         this.categoryProfitChart = null;
         this.topItemsRevenueChart = null;
+        this.categoryItemCharts = {};
         
         // Initialize
         this.init();
@@ -623,7 +624,7 @@ class RestaurantOrderSystem {
         }
     }
     
-    // Render ongoing orders with new button layout
+    // Render ongoing orders with side-by-side buttons
     renderOngoingOrders() {
         const tbody = document.getElementById('ongoing-orders-body');
         const emptyState = document.getElementById('no-ongoing-orders');
@@ -646,7 +647,7 @@ class RestaurantOrderSystem {
             html += `
                 <tr>
                     <td>
-                        <button class="btn btn-sm btn-danger delete-order-btn" data-order-id="${order.id}">
+                        <button class="btn btn-sm btn-danger delete-order-btn" data-order-id="${order.id}" title="Delete Order">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -661,12 +662,14 @@ class RestaurantOrderSystem {
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-success complete-order-btn w-100" data-order-id="${order.id}">
-                            <i class="fas fa-check-circle me-1"></i> Complete
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary view-order-btn w-100 mt-1" data-order-id="${order.id}">
-                            <i class="fas fa-eye me-1"></i> View
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary view-order-btn" data-order-id="${order.id}" title="View Order">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-success complete-order-btn" data-order-id="${order.id}" title="Complete Order">
+                                <i class="fas fa-check me-1"></i> Complete
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1159,9 +1162,10 @@ class RestaurantOrderSystem {
         this.updateAnalyticsSummary(filteredOrders);
         this.renderBestItems(filteredOrders);
         this.renderCategoryPerformance(filteredOrders);
+        this.renderCategoryItemCharts(filteredOrders);
     }
     
-    // Render new analytics charts
+    // Render new analytics charts with improved colors
     renderAnalyticsCharts(orders) {
         // Destroy existing charts if they exist
         if (this.revenueProfitChart) {
@@ -1184,11 +1188,6 @@ class RestaurantOrderSystem {
         // Prepare data for charts
         const categoryRevenueData = categories.map(cat => categoryData[cat].revenue);
         const categoryProfitData = categories.map(cat => categoryData[cat].profit);
-        const categoryMarginData = categories.map(cat => {
-            return categoryData[cat].revenue > 0 
-                ? (categoryData[cat].profit / categoryData[cat].revenue * 100).toFixed(1)
-                : 0;
-        });
         
         // Calculate item-wise data for top items
         const itemData = this.calculateItemData(orders);
@@ -1200,19 +1199,29 @@ class RestaurantOrderSystem {
         const topItemRevenue = topItems.map(([, data]) => data.revenue);
         const topItemProfit = topItems.map(([, data]) => data.profit);
         
-        // Colors for charts
+        // Enhanced color palette with solid appealing colors
         const colors = {
-            revenue: 'rgba(75, 192, 192, 0.8)',
-            profit: 'rgba(255, 99, 132, 0.8)',
+            revenue: '#3498db', // Bright Blue
+            profit: '#2ecc71', // Bright Green
             categoryColors: [
-                'rgba(255, 99, 132, 0.8)',
-                'rgba(54, 162, 235, 0.8)',
-                'rgba(255, 206, 86, 0.8)',
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(153, 102, 255, 0.8)',
-                'rgba(255, 159, 64, 0.8)',
-                'rgba(201, 203, 207, 0.8)',
-                'rgba(255, 99, 132, 0.8)'
+                '#e74c3c', // Red
+                '#3498db', // Blue
+                '#f39c12', // Orange
+                '#2ecc71', // Green
+                '#9b59b6', // Purple
+                '#1abc9c', // Teal
+                '#d35400', // Dark Orange
+                '#34495e'  // Dark Blue
+            ],
+            lightColors: [
+                'rgba(231, 76, 60, 0.8)',
+                'rgba(52, 152, 219, 0.8)',
+                'rgba(243, 156, 18, 0.8)',
+                'rgba(46, 204, 113, 0.8)',
+                'rgba(155, 89, 182, 0.8)',
+                'rgba(26, 188, 156, 0.8)',
+                'rgba(211, 84, 0, 0.8)',
+                'rgba(52, 73, 94, 0.8)'
             ]
         };
         
@@ -1229,8 +1238,10 @@ class RestaurantOrderSystem {
                         orders.reduce((sum, order) => sum + (order.totalProfit || (order.total - (order.totalCost || 0))), 0)
                     ],
                     backgroundColor: [colors.revenue, colors.profit],
-                    borderColor: ['rgb(75, 192, 192)', 'rgb(255, 99, 132)'],
-                    borderWidth: 1
+                    borderColor: [colors.revenue, colors.profit],
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    hoverBackgroundColor: ['#2980b9', '#27ae60']
                 }]
             },
             options: {
@@ -1241,14 +1252,18 @@ class RestaurantOrderSystem {
                         display: true,
                         text: 'Overall Revenue vs Profit',
                         font: {
-                            size: 14,
+                            size: 16,
                             weight: 'bold'
-                        }
+                        },
+                        color: '#2c3e50'
                     },
                     legend: {
                         display: false
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleColor: '#ecf0f1',
+                        bodyColor: '#ecf0f1',
                         callbacks: {
                             label: function(context) {
                                 return `₹${context.parsed.y.toLocaleString()}`;
@@ -1259,10 +1274,21 @@ class RestaurantOrderSystem {
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
                         ticks: {
                             callback: function(value) {
                                 return '₹' + value.toLocaleString();
+                            },
+                            font: {
+                                weight: 'bold'
                             }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
                         }
                     }
                 }
@@ -1277,32 +1303,41 @@ class RestaurantOrderSystem {
                 labels: categories,
                 datasets: [{
                     data: categoryRevenueData,
-                    backgroundColor: colors.categoryColors.slice(0, categories.length),
-                    borderWidth: 1
+                    backgroundColor: colors.lightColors.slice(0, categories.length),
+                    borderColor: colors.categoryColors.slice(0, categories.length),
+                    borderWidth: 2,
+                    hoverOffset: 15
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '60%',
                 plugins: {
                     title: {
                         display: true,
                         text: 'Revenue by Category',
                         font: {
-                            size: 14,
+                            size: 16,
                             weight: 'bold'
-                        }
+                        },
+                        color: '#2c3e50'
                     },
                     legend: {
                         position: 'right',
                         labels: {
-                            boxWidth: 12,
+                            boxWidth: 15,
                             font: {
-                                size: 10
-                            }
+                                size: 11,
+                                weight: 'bold'
+                            },
+                            color: '#2c3e50'
                         }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleColor: '#ecf0f1',
+                        bodyColor: '#ecf0f1',
                         callbacks: {
                             label: function(context) {
                                 const label = context.label || '';
@@ -1326,9 +1361,11 @@ class RestaurantOrderSystem {
                 datasets: [{
                     label: 'Profit (₹)',
                     data: categoryProfitData,
-                    backgroundColor: colors.categoryColors.slice(0, categories.length),
-                    borderColor: colors.categoryColors.slice(0, categories.length).map(color => color.replace('0.8', '1')),
-                    borderWidth: 1
+                    backgroundColor: colors.lightColors.slice(0, categories.length),
+                    borderColor: colors.categoryColors.slice(0, categories.length),
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    hoverBackgroundColor: colors.categoryColors.slice(0, categories.length)
                 }]
             },
             options: {
@@ -1339,14 +1376,18 @@ class RestaurantOrderSystem {
                         display: true,
                         text: 'Profit by Category',
                         font: {
-                            size: 14,
+                            size: 16,
                             weight: 'bold'
-                        }
+                        },
+                        color: '#2c3e50'
                     },
                     legend: {
                         display: false
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleColor: '#ecf0f1',
+                        bodyColor: '#ecf0f1',
                         callbacks: {
                             label: function(context) {
                                 return `₹${context.parsed.y.toLocaleString()}`;
@@ -1357,10 +1398,21 @@ class RestaurantOrderSystem {
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
                         ticks: {
                             callback: function(value) {
                                 return '₹' + value.toLocaleString();
+                            },
+                            font: {
+                                weight: 'bold'
                             }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
                         }
                     }
                 }
@@ -1370,23 +1422,27 @@ class RestaurantOrderSystem {
         // 4. Top Items Revenue Chart
         const topItemsCtx = document.getElementById('topItemsRevenueChart').getContext('2d');
         this.topItemsRevenueChart = new Chart(topItemsCtx, {
-            type: 'horizontalBar',
+            type: 'bar',
             data: {
-                labels: topItemNames.map(name => name.length > 20 ? name.substring(0, 20) + '...' : name),
+                labels: topItemNames.map(name => name.length > 15 ? name.substring(0, 15) + '...' : name),
                 datasets: [
                     {
                         label: 'Revenue',
                         data: topItemRevenue,
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgb(54, 162, 235)',
-                        borderWidth: 1
+                        backgroundColor: colors.revenue,
+                        borderColor: colors.revenue,
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#2980b9'
                     },
                     {
                         label: 'Profit',
                         data: topItemProfit,
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                        borderColor: 'rgb(255, 99, 132)',
-                        borderWidth: 1
+                        backgroundColor: colors.profit,
+                        borderColor: colors.profit,
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#27ae60'
                     }
                 ]
             },
@@ -1399,11 +1455,23 @@ class RestaurantOrderSystem {
                         display: true,
                         text: 'Top Items - Revenue vs Profit',
                         font: {
-                            size: 14,
+                            size: 16,
                             weight: 'bold'
+                        },
+                        color: '#2c3e50'
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                weight: 'bold'
+                            }
                         }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleColor: '#ecf0f1',
+                        bodyColor: '#ecf0f1',
                         callbacks: {
                             label: function(context) {
                                 return `${context.dataset.label}: ₹${context.parsed.x.toLocaleString()}`;
@@ -1414,14 +1482,173 @@ class RestaurantOrderSystem {
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        },
                         ticks: {
                             callback: function(value) {
                                 return '₹' + value.toLocaleString();
+                            },
+                            font: {
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                weight: 'bold'
                             }
                         }
                     }
                 }
             }
+        });
+    }
+    
+    // Render category item charts
+    renderCategoryItemCharts(orders) {
+        // Category-specific charts
+        const categories = ['APPETIZERS', 'WRAPS', 'BURGERS', 'DESSERTS'];
+        
+        categories.forEach(category => {
+            // Destroy existing chart if it exists
+            if (this.categoryItemCharts[category]) {
+                this.categoryItemCharts[category].destroy();
+            }
+            
+            // Get items for this category
+            const categoryItems = this.menu.filter(item => item.category === category);
+            
+            // Calculate sales data for each item
+            const itemSales = {};
+            categoryItems.forEach(item => {
+                itemSales[item.name] = {
+                    revenue: 0,
+                    profit: 0,
+                    quantity: 0
+                };
+            });
+            
+            // Calculate totals from orders
+            orders.forEach(order => {
+                order.items.forEach(orderItem => {
+                    const menuItem = this.menu.find(m => m.id === orderItem.id);
+                    if (menuItem && menuItem.category === category) {
+                        if (!itemSales[menuItem.name]) {
+                            itemSales[menuItem.name] = {
+                                revenue: 0,
+                                profit: 0,
+                                quantity: 0
+                            };
+                        }
+                        
+                        const itemRevenue = orderItem.price * orderItem.quantity;
+                        const itemCost = (orderItem.cost || menuItem.cost || 0) * orderItem.quantity;
+                        const itemProfit = itemRevenue - itemCost;
+                        
+                        itemSales[menuItem.name].revenue += itemRevenue;
+                        itemSales[menuItem.name].profit += itemProfit;
+                        itemSales[menuItem.name].quantity += orderItem.quantity;
+                    }
+                });
+            });
+            
+            // Sort items by revenue and take top 5
+            const sortedItems = Object.entries(itemSales)
+                .filter(([, data]) => data.revenue > 0)
+                .sort((a, b) => b[1].revenue - a[1].revenue)
+                .slice(0, 5);
+            
+            const itemNames = sortedItems.map(([name]) => name);
+            const itemRevenue = sortedItems.map(([, data]) => data.revenue);
+            const itemProfit = sortedItems.map(([, data]) => data.profit);
+            
+            // Create chart
+            const ctx = document.getElementById(`${category.toLowerCase()}Chart`).getContext('2d');
+            this.categoryItemCharts[category] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: itemNames.map(name => name.length > 12 ? name.substring(0, 12) + '...' : name),
+                    datasets: [
+                        {
+                            label: 'Revenue',
+                            data: itemRevenue,
+                            backgroundColor: '#3498db',
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            hoverBackgroundColor: '#2980b9'
+                        },
+                        {
+                            label: 'Profit',
+                            data: itemProfit,
+                            backgroundColor: '#2ecc71',
+                            borderColor: '#2ecc71',
+                            borderWidth: 2,
+                            borderRadius: 4,
+                            hoverBackgroundColor: '#27ae60'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${category} Performance`,
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            },
+                            color: '#2c3e50'
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                            titleColor: '#ecf0f1',
+                            bodyColor: '#ecf0f1',
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ₹${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value.toLocaleString();
+                                },
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         });
     }
     
@@ -1494,7 +1721,7 @@ class RestaurantOrderSystem {
         return itemData;
     }
     
-    // Update analytics summary
+    // Update analytics summary - FIXED
     updateAnalyticsSummary(orders) {
         // Calculate totals
         const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
@@ -1503,7 +1730,7 @@ class RestaurantOrderSystem {
         const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
         const totalOrders = orders.length;
         
-        // Update display
+        // Update display - FIXED: Using correct element IDs
         document.getElementById('analytics-revenue').textContent = `₹${totalRevenue.toLocaleString()}`;
         document.getElementById('analytics-profit').textContent = `₹${totalProfit.toLocaleString()}`;
         document.getElementById('analytics-orders').textContent = totalOrders;
@@ -1536,7 +1763,7 @@ class RestaurantOrderSystem {
             '<tr><td colspan="4" class="text-center text-muted">No data</td></tr>';
     }
     
-    // Render category performance table
+    // Render category performance table - FIXED
     renderCategoryPerformance(orders) {
         const categoryData = this.calculateCategoryData(orders);
         

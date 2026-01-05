@@ -324,7 +324,7 @@
                                     <th>Items</th>
                                     <th>Total</th>
                                     <th>Status</th>
-                                    <th style="min-width: 120px;">Complete</th>
+                                    <th style="min-width: 130px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="ongoing-orders-body">
@@ -583,7 +583,8 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <div class="row g-3">
+                            <!-- Main Charts Row -->
+                            <div class="row g-3 mb-4">
                                 <div class="col-md-6">
                                     <div class="chart-container">
                                         <canvas id="revenueProfitChart"></canvas>
@@ -602,6 +603,33 @@
                                 <div class="col-md-6">
                                     <div class="chart-container">
                                         <canvas id="topItemsRevenueChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Category-wise Item Performance -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-3">Category-wise Item Performance</h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="appetizersChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="wrapsChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="burgersChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="chart-container">
+                                        <canvas id="dessertsChart"></canvas>
                                     </div>
                                 </div>
                             </div>
